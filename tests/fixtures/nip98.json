@@ -1,0 +1,72 @@
+{
+  "loginUrl": "https://jellyfin.example.com/NostrAuth/Login",
+  "requestBody": "{\"deviceId\":\"test-device\",\"clientName\":\"web\",\"clientVersion\":\"1.0\"}",
+  "cases": [
+    {
+      "name": "valid event within freshness window is accepted",
+      "authorization": "Nostr eyJraW5kIjoyNzIzNSwiY3JlYXRlZF9hdCI6MTc2MDAwMDAwMCwidGFncyI6W1sidSIsImh0dHBzOi8vamVsbHlmaW4uZXhhbXBsZS5jb20vTm9zdHJBdXRoL0xvZ2luIl0sWyJtZXRob2QiLCJQT1NUIl1dLCJjb250ZW50IjoiIiwicHVia2V5IjoiNGYzNTViZGNiN2NjMGFmNzI4ZWYzY2NlYjk2MTVkOTA2ODRiYjViMmNhNWY4NTlhYjBmMGI3MDQwNzU4NzFhYSIsImlkIjoiZDk0N2E4ZGZmOTZkMjM1NDA5YTZkZmMyMWFjMTgzZTg0MjkxNTgyNWQ0MTdmYzA2YjRhZmE0YWM2YTY5NzU0MiIsInNpZyI6IjBhZTAwZWZiZTE5NjhhODM3ZDgwYmRkYTllOGI3OTk4NDkzODczOTYwNWE2ZmMzYjNjYzQ2ODZhNDdjYmVkN2ViMDI1ZTc4NTgyYzkwNmNlY2MyNGZkM2M2MWI2NWI0OGI4ZGJkNGRiN2I0NTIzM2ViNmVmNTc2MzJiNDUzOGQwIn0=",
+      "now": 1760000010,
+      "expect": "accept",
+      "expectPubkey": "4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa"
+    },
+    {
+      "name": "created_at older than 60s is rejected",
+      "authorization": "Nostr eyJraW5kIjoyNzIzNSwiY3JlYXRlZF9hdCI6MTc1OTk5OTg4MCwidGFncyI6W1sidSIsImh0dHBzOi8vamVsbHlmaW4uZXhhbXBsZS5jb20vTm9zdHJBdXRoL0xvZ2luIl0sWyJtZXRob2QiLCJQT1NUIl1dLCJjb250ZW50IjoiIiwicHVia2V5IjoiNGYzNTViZGNiN2NjMGFmNzI4ZWYzY2NlYjk2MTVkOTA2ODRiYjViMmNhNWY4NTlhYjBmMGI3MDQwNzU4NzFhYSIsImlkIjoiMDI4YzI5N2IyOTM1ZWU4YWM2MmM3MjE1OThlN2IwYjFkNDVjMmRlYmU5ZWMzYzc4YjZmN2ZlZGQ2ZGE3OWJmNiIsInNpZyI6ImNiZTc1Y2E5MWUyZDVjZDk5NjZkYjZlNjBiZWE3NzZhN2M5YzFmOWFiNDNhMTMyOTQ3ZGVjYThmZDNjYjI2YTg4NTgwZTFmYmUzMWQ4ZmU4Y2FjZTBkYjQwZDAwYjdjZGQ1ZmI2OGQyNWJjNGI5NzYwNmQwMDU4NWU2ODIwYmZiIn0=",
+      "now": 1760000000,
+      "expect": "reject",
+      "expectReason": "expired_event"
+    },
+    {
+      "name": "u tag not matching request URL is rejected",
+      "authorization": "Nostr eyJraW5kIjoyNzIzNSwiY3JlYXRlZF9hdCI6MTc2MDAwMDAwMCwidGFncyI6W1sidSIsImh0dHBzOi8vamVsbHlmaW4uZXhhbXBsZS5jb20vb3RoZXIiXSxbIm1ldGhvZCIsIlBPU1QiXV0sImNvbnRlbnQiOiIiLCJwdWJrZXkiOiI0ZjM1NWJkY2I3Y2MwYWY3MjhlZjNjY2ViOTYxNWQ5MDY4NGJiNWIyY2E1Zjg1OWFiMGYwYjcwNDA3NTg3MWFhIiwiaWQiOiI5NTkyOWViOTA4OGRhOTE5MjFiZGUyNDVhODE3NWI4YTA5YzczMWQwZjk4NTBlMmNkMjAyMzA0NzllODIyZWJmIiwic2lnIjoiM2YwNzc5MmEyNmE2N2M4ZTZmNGEyYmQ1ZjRmZTMzYzMyNmU3YTllOWZhMGE2MDY0ZGYxOWYyMDMxYzMwNWEzODAzMzAxZThlMDk3ZWVhMDQ1MzEwZGZhMjI3YmUyYjg1Y2QxOTRjNWY3NTg0NjQ3NjAzOTg0NDFjZjc0YmRkZGIifQ==",
+      "now": 1760000010,
+      "expect": "reject",
+      "expectReason": "url_mismatch"
+    },
+    {
+      "name": "method tag not matching HTTP method is rejected",
+      "authorization": "Nostr eyJraW5kIjoyNzIzNSwiY3JlYXRlZF9hdCI6MTc2MDAwMDAwMCwidGFncyI6W1sidSIsImh0dHBzOi8vamVsbHlmaW4uZXhhbXBsZS5jb20vTm9zdHJBdXRoL0xvZ2luIl0sWyJtZXRob2QiLCJHRVQiXV0sImNvbnRlbnQiOiIiLCJwdWJrZXkiOiI0ZjM1NWJkY2I3Y2MwYWY3MjhlZjNjY2ViOTYxNWQ5MDY4NGJiNWIyY2E1Zjg1OWFiMGYwYjcwNDA3NTg3MWFhIiwiaWQiOiIzNjAxMzI3NTE3YmJkM2M2MWYyNTc1MDg3NWQ5ZTFlN2FjMWE2ZTA5OTE0ZTIwZjE1YTgxMWEyN2QxNDA3ODNhIiwic2lnIjoiNGY1MTc2YWIzZGU4YjZhZDdjNDQ2MjJkOGE4NjZiYmM0MGI1NzQyNWY5ZDI0OGE0ZmQxNTYwYmQzODcyM2E4NDAxZTgxNDJiNzA1ZDEzNjQ3MWY1Mzc0YjQ0OGI3MTBmZmFkMDI4NmI0YmJlNzlkNWVmMTc3OWMwY2M2NTVmNTUifQ==",
+      "now": 1760000010,
+      "expect": "reject",
+      "expectReason": "method_mismatch"
+    },
+    {
+      "name": "non-27235 kind is rejected",
+      "authorization": "Nostr eyJraW5kIjoyNzIzNiwiY3JlYXRlZF9hdCI6MTc2MDAwMDAwMCwidGFncyI6W1sidSIsImh0dHBzOi8vamVsbHlmaW4uZXhhbXBsZS5jb20vTm9zdHJBdXRoL0xvZ2luIl0sWyJtZXRob2QiLCJQT1NUIl1dLCJjb250ZW50IjoiIiwicHVia2V5IjoiNGYzNTViZGNiN2NjMGFmNzI4ZWYzY2NlYjk2MTVkOTA2ODRiYjViMmNhNWY4NTlhYjBmMGI3MDQwNzU4NzFhYSIsImlkIjoiZGI3MjQ4NzU3YWQ3ZjE0NmY3NjYyYWI4NWNhMjU5MGMyMTc2ZjNiMDJmNDlhZDNhMGU3ZjdkMWRlMjhjMmVhNyIsInNpZyI6ImM1MjgzMjQ2NzU1MTI5NzA5YTY5MzdmZDg5YWQ3MDEzZmZhYjNmMzY5OTU5NGU2NDUxMGE2M2Y4YjI1NTIyMDYxYzdkOWY0ZTQ5MDk5NTZhNTliYTgzMGI5NjEyZGE5YzlhZGZhNDAzNjc4M2IwZWRhY2QzZGM1MDA2NzNjM2FhIn0=",
+      "now": 1760000010,
+      "expect": "reject",
+      "expectReason": "invalid_event"
+    },
+    {
+      "name": "tampered signature is rejected",
+      "authorization": "Nostr eyJraW5kIjoyNzIzNSwiY3JlYXRlZF9hdCI6MTc2MDAwMDAwMCwidGFncyI6W1sidSIsImh0dHBzOi8vamVsbHlmaW4uZXhhbXBsZS5jb20vTm9zdHJBdXRoL0xvZ2luIl0sWyJtZXRob2QiLCJQT1NUIl1dLCJjb250ZW50IjoiIiwicHVia2V5IjoiNGYzNTViZGNiN2NjMGFmNzI4ZWYzY2NlYjk2MTVkOTA2ODRiYjViMmNhNWY4NTlhYjBmMGI3MDQwNzU4NzFhYSIsImlkIjoiZDk0N2E4ZGZmOTZkMjM1NDA5YTZkZmMyMWFjMTgzZTg0MjkxNTgyNWQ0MTdmYzA2YjRhZmE0YWM2YTY5NzU0MiIsInNpZyI6IjBjMTBlNjQ1MzA0MjE3ZDc2NTViZThhM2U1YjM4ZmI5ODIyYzIxYzhmNTQ4ZmRhNzJjZmVkNTU5NjllNDk3ZDgzYTlkODk0ZDg0NDEyOGFlOWI5ZGIyNWUwZDI3MGVhYzg1Yzc5ZWEwY2MzYWM0ZTYxMDg3YWRlZjkxYmMzZGE3In0=",
+      "now": 1760000010,
+      "expect": "reject",
+      "expectReason": "invalid_event"
+    },
+    {
+      "name": "payload hash matching request body is accepted",
+      "authorization": "Nostr eyJraW5kIjoyNzIzNSwiY3JlYXRlZF9hdCI6MTc2MDAwMDAwMCwidGFncyI6W1sidSIsImh0dHBzOi8vamVsbHlmaW4uZXhhbXBsZS5jb20vTm9zdHJBdXRoL0xvZ2luIl0sWyJtZXRob2QiLCJQT1NUIl0sWyJwYXlsb2FkIiwiMWFjN2YxYTMyZDMyNTEwZWYxNWNjMjA0NTU3Y2ViMDBhZDVjYzZjNmRkYTMzZmM2ZjMyNjdkMDg1Y2ZkZDhiMyJdXSwiY29udGVudCI6IiIsInB1YmtleSI6IjRmMzU1YmRjYjdjYzBhZjcyOGVmM2NjZWI5NjE1ZDkwNjg0YmI1YjJjYTVmODU5YWIwZjBiNzA0MDc1ODcxYWEiLCJpZCI6IjRmYmY1NzZhMmQyODRjMDkyODExN2QxMDRkOTM1NTUxMzZiODk2NDI4ZjU2Yzc1NTc1NTFkMjQ0ODk5ZWI2NDkiLCJzaWciOiJjYjRkYTA3Y2I4NDYyOWQ5NWM1MzgzNmRjOTkwNDY4NWM3NjAzZDE4ZTE2OWYwOWI0OTBhZWZlMGViM2JiMDFmZjMxNjVjYzIxNDFkNmNjMDk2M2JmMzE4MWMxYmQ4NjZmNmUzZWRjNWU5ZWEzOWU2MTRkOWJkMjE5ZTY1ZDYxMSJ9",
+      "requestBody": "{\"deviceId\":\"test-device\",\"clientName\":\"web\",\"clientVersion\":\"1.0\"}",
+      "now": 1760000010,
+      "expect": "accept",
+      "expectPubkey": "4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa"
+    },
+    {
+      "name": "payload hash not matching request body is rejected",
+      "authorization": "Nostr eyJraW5kIjoyNzIzNSwiY3JlYXRlZF9hdCI6MTc2MDAwMDAwMCwidGFncyI6W1sidSIsImh0dHBzOi8vamVsbHlmaW4uZXhhbXBsZS5jb20vTm9zdHJBdXRoL0xvZ2luIl0sWyJtZXRob2QiLCJQT1NUIl0sWyJwYXlsb2FkIiwiMWFjN2YxYTMyZDMyNTEwZWYxNWNjMjA0NTU3Y2ViMDBhZDVjYzZjNmRkYTMzZmM2ZjMyNjdkMDg1Y2ZkZDhiMyJdXSwiY29udGVudCI6IiIsInB1YmtleSI6IjRmMzU1YmRjYjdjYzBhZjcyOGVmM2NjZWI5NjE1ZDkwNjg0YmI1YjJjYTVmODU5YWIwZjBiNzA0MDc1ODcxYWEiLCJpZCI6IjRmYmY1NzZhMmQyODRjMDkyODExN2QxMDRkOTM1NTUxMzZiODk2NDI4ZjU2Yzc1NTc1NTFkMjQ0ODk5ZWI2NDkiLCJzaWciOiJhNjZhOGM5YjQzN2EzMjY3ZjlhNGNjNzg4OTA4MDBiOTA0YmY5YjhiOTBhYzBiY2M4MzQxYWM1MWE1NjYxZWIyMzQ3ODFlYjNkMDA1NTcyZDVjNzNiZDFlNTMxZTRmNGI3ZjAyZDRmMjAxYWNmMTIzMDRkMjVmMzY4Y2E2YjY3YyJ9",
+      "requestBody": "{\"deviceId\":\"different\"}",
+      "now": 1760000010,
+      "expect": "reject",
+      "expectReason": "invalid_event"
+    },
+    {
+      "name": "valid event from a non-allowlisted pubkey passes NIP-98 but is rejected by authorization",
+      "authorization": "Nostr eyJraW5kIjoyNzIzNSwiY3JlYXRlZF9hdCI6MTc2MDAwMDAwMCwidGFncyI6W1sidSIsImh0dHBzOi8vamVsbHlmaW4uZXhhbXBsZS5jb20vTm9zdHJBdXRoL0xvZ2luIl0sWyJtZXRob2QiLCJQT1NUIl1dLCJjb250ZW50IjoiIiwicHVia2V5IjoiNDY2ZDdmY2FlNTYzZTVjYjA5YTBkMTg3MGJiNTgwMzQ0ODA0NjE3ODc5YTE0OTQ5Y2YyMjI4NWYxYmFlM2YyNyIsImlkIjoiY2RhNDM4MjcwYjUyOGQ3NmZmYWNiZThhYjI2OTVkMzYyZjA1ZDkyZDc3Mjk5Y2U5MThkYjJhYmM2MGZlNzU3NyIsInNpZyI6IjYwNjk5NzMwYmNiZDUyMTYzYzFiZWQwN2MyMTc1NGUxNjA1Yzk0MTJlODY1Yzk0MTQyOWI2ODJkNjBmMjA4M2RjYjViMDNhNTQ2ZWVlNWY5Njk2YTZiNTkxMDZhZjE2MTNiNDhkNTQyMjRkNzk5ZjI5MzdmZDI0MWQ1ZGUxMjU0In0=",
+      "now": 1760000010,
+      "expect": "accept",
+      "expectPubkey": "466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27",
+      "expectNotInAllowlist": true
+    }
+  ]
+}
