@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  fixtures:
+    name: Fixture determinism
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/fixtures/package-lock.json
+      - name: Regenerate fixtures
+        working-directory: tests/fixtures
+        run: |
+          npm ci
+          node generate.mjs
+      # Committed fixture outputs must be reproducible byte-for-byte;
+      # a diff here means generate.mjs drifted from the committed vectors.
+      - name: Fail on fixture drift
+        run: git diff --exit-code -- tests/fixtures/
+
+  dotnet-tests:
+    name: .NET behavior tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Run behavior tests
+        run: dotnet test tests/Jellyfin.Plugin.NostrAuth.Tests
