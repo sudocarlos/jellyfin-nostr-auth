@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Jellyfin.Plugin.NostrAuth.Tests.Contracts;
 using Jellyfin.Plugin.NostrAuth.Tests.TestSupport;
 using Xunit;
 
@@ -23,9 +24,10 @@ public class LoginEndpointTests
         var response = await LoginAsync(c.Header(), "{\"deviceId\":\"test-device\"}");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var json = JsonDocument.Parse(response.Body);
-        Assert.Equal("user", json.RootElement.GetProperty("user"));
-        Assert.True(json.RootElement.TryGetProperty("accessToken", out _));
-        Assert.True(json.RootElement.TryGetProperty("sessionInfo", out _));
+        var root = json.RootElement;
+        Assert.True(root.TryGetProperty("user", out _));
+        Assert.True(root.TryGetProperty("accessToken", out _));
+        Assert.True(root.TryGetProperty("sessionInfo", out _));
     }
 
     [Fact(Skip = "pending implementation")]

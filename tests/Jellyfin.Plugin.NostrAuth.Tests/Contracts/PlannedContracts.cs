@@ -86,3 +86,6 @@ public interface IUserProvisioner
     /// Created users get an unusable random password and AuthenticationProviderId = plugin.</summary>
     (UserRecord User, bool Created) ResolveOrCreate(string userPubkeyHex);
 }
+
+/// <summary>Minimal HTTP response for endpoint contract tests.</summary>
+public record HttpResponse(System.Net.HttpStatusCode StatusCode, string Body);

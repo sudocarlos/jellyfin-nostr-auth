@@ -117,7 +117,7 @@ public class Nip98VerificationTests
         => c.TryGetProperty("requestBody", out var rb) ? rb.GetString() : null;
 }
 
-public static class Nip98CaseExtensions
+public static class FixtureExtensions
 {
     public static long Now(this JsonElement c) => c.GetProperty("now").GetInt64();
     public static string Header(this JsonElement c) => c.GetProperty("authorization").GetString()!;

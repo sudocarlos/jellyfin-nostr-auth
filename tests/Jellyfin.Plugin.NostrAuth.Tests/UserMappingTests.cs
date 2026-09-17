@@ -17,7 +17,7 @@ public class UserMappingTests
     {
         var (user, created) = Provision(Hex("userAuthorized"));
         Assert.True(created);
-        Assert.NotNull(user.Id);
+        Assert.NotEqual(default, user.Id);
     }
 
     [Fact(Skip = "pending implementation")]
@@ -47,6 +47,9 @@ public class UserMappingTests
 
     private (UserRecord User, bool Created) Provision(string pubkeyHex)
         => throw new NotImplementedException("wire IUserProvisioner");
+
+    private static bool HasUnusablePassword(UserRecord user)
+        => throw new NotImplementedException("assert password cannot authenticate");
 
     private static string Hex(string keyName) => Fixtures.PubkeyHex(Fixtures.Allowlist, keyName);
 }
