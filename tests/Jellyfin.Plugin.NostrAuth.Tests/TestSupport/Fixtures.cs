@@ -14,13 +14,16 @@ public static class Fixtures
     public static JsonElement Nip98 => Load("nip98.json");
     public static JsonElement Allowlist => Load("allowlist.json");
 
-    public static string PubkeyHex(JsonElement keys, string name)
+    public static string PubkeyHex(JsonElement fixture, string name)
+        => KeyField(fixture, name, "pubkeyHex");
+
+    public static string KeyField(JsonElement fixture, string name, string field)
     {
-        foreach (var k in keys.GetProperty("keys").EnumerateArray())
+        foreach (var k in fixture.GetProperty("keys").EnumerateArray())
         {
             if (k.GetProperty("name").GetString() == name)
             {
-                return k.GetProperty("pubkeyHex").GetString()!;
+                return k.GetProperty(field).GetString()!;
             }
         }
         throw new InvalidOperationException($"key '{name}' not in fixtures");

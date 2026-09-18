@@ -5,6 +5,7 @@
 // never expire. Run: npm install && node generate.mjs
 import { writeFileSync } from 'node:fs';
 import * as NostrTools from 'nostr-tools';
+import { createHash } from 'node:crypto';
 
 const { generateSecretKey, getPublicKey, finalizeEvent, nip19, nip44 } = NostrTools;
 
@@ -156,7 +157,10 @@ const BODY = JSON.stringify({ deviceId: 'test-device', clientName: 'web', client
 
 const nip98Event = ({ sk, url, method, createdAt, kind = 27235, withPayload = false, tamper = false }) => {
   const tags = [['u', url], ['method', method]];
-  if (withPayload) tags.push(['payload', NostrTools.nip98.hashPayload(BODY)]);
+  if (withPayload) // NIP-98 payload tag = sha256 hex of the RAW request body.
+  // (nostr-tools' hashPayload hashes JSON.stringify(payload) instead —
+  // see the interop note in docs/design.md; we follow the spec.)
+  tags.push(['payload', createHash('sha256').update(BODY).digest('hex')]);
   const ev = finalizeEvent(
     { kind, created_at: createdAt, tags, content: '' },
     fromHex(sk.skHex),
@@ -184,6 +188,13 @@ const nip98 = {
     {
       name: 'created_at older than 60s is rejected',
       authorization: `Nostr ${b64(nip98Event({ sk: KEYS.userAuthorized, url: LOGIN_URL, method: 'POST', createdAt: BASE - 120 }))}`,
+      now: BASE,
+      expect: 'reject',
+      expectReason: 'expired_event',
+    },
+    {
+      name: 'created_at in the future beyond tolerance is rejected',
+      authorization: `Nostr ${b64(nip98Event({ sk: KEYS.userAuthorized, url: LOGIN_URL, method: 'POST', createdAt: BASE + 120 }))}`,
       now: BASE,
       expect: 'reject',
       expectReason: 'expired_event',

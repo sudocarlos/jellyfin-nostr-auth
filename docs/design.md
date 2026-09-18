@@ -81,6 +81,13 @@ this one server's access list, nothing else.
   verification path. Rationale: NIP-98 is the only Nostr spec for server-side HTTP auth
   and has a C# reference implementation linked from the spec itself.
 
+- **Payload-hash semantics (interop note).** The optional NIP-98 `payload` tag is
+  verified as sha256 hex of the raw request body, per the NIP. nostr-tools'
+  `nip98.hashPayload` instead hashes `JSON.stringify(payload)` — a double-encode
+  for string bodies — so the plugin's own login snippet computes the payload tag
+  itself rather than calling that helper. Recorded here because it silently
+  breaks payload verification if client and server libraries disagree.
+
 - **NIP-46 is only involved at login time.** The bunker (if used) is contacted to obtain
   the user pubkey and sign the NIP-98 event. Issued Jellyfin sessions never require the
   bunker to be online afterwards. Clients must enforce their own connection timeouts
