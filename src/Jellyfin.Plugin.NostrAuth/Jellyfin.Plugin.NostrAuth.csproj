@@ -24,8 +24,12 @@
 
   <ItemGroup>
     <None Remove="Configuration\configPage.html" />
-    <!-- Embedded resource: served by IHasWebPages as the dashboard config page. -->
+    <!-- Embedded resources: the dashboard config page (IHasWebPages) and the
+         pre-login Nostr login page + its vendored nostr-tools bundle,
+         served anonymously by NostrAuthController. -->
     <EmbeddedResource Include="Configuration\configPage.html" />
+    <EmbeddedResource Include="Web\loginPage.html" />
+    <EmbeddedResource Include="Web\nostr.mjs" />
   </ItemGroup>
 
   <ItemGroup>

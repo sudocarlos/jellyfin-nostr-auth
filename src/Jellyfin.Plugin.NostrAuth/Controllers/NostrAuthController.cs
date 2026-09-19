@@ -112,6 +112,39 @@ public class NostrAuthController : ControllerBase
         };
 
     /// <summary>
+    /// The standalone Nostr login page, reachable from the login screen.
+    /// Owners link it from Dashboard → General → Branding (login disclaimer or
+    /// custom CSS). Presents NIP-07, bunker:// and nostrconnect sign-in paths.
+    /// </summary>
+    /// <response code="200">The login page.</response>
+    /// <returns>The page HTML.</returns>
+    [HttpGet("LoginPage")]
+    [AllowAnonymous]
+    public IActionResult LoginPage()
+        => EmbeddedFile("loginPage.html", "text/html; charset=utf-8");
+
+    /// <summary>The vendored nostr-tools bundle the login page imports.</summary>
+    /// <response code="200">The bundle.</response>
+    /// <returns>The login page's script bundle.</returns>
+    [HttpGet("nostr.mjs")]
+    [AllowAnonymous]
+    public IActionResult NostrBundle()
+        => EmbeddedFile("nostr.mjs", "text/javascript");
+
+    private static ContentResult EmbeddedFile(string name, string contentType)
+    {
+        var assembly = typeof(Plugin).Assembly;
+        using var stream = assembly.GetManifestResourceStream($"{typeof(Plugin).Namespace}.Web.{name}")
+            ?? throw new InvalidOperationException($"Embedded resource {name} is missing.");
+        using var reader = new StreamReader(stream);
+        return new ContentResult
+        {
+            Content = reader.ReadToEnd(),
+            ContentType = contentType
+        };
+    }
+
+    /// <summary>
     /// The absolute request URL, exactly as the client saw it — NIP-98 binds
     /// the u tag to this string byte-for-byte, scheme and query included.
     /// </summary>

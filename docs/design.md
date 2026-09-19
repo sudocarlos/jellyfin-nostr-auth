@@ -165,12 +165,22 @@ which deliberately names no password authentication provider: password login
 fails closed for these users even if the unusable random password were somehow
 known.
 
-### Login page snippet
+### Login page
 
-A standalone JS snippet (Branding-injected) that presents: a "Sign in with Nostr" button
-(NIP-07 if `window.nostr` exists), a bunker-paste field (`bunker://`), and a
-`nostrconnect://` QR. All paths produce the NIP-98 header and POST to the login endpoint;
-on success the snippet stores the access token the way the standard client does.
+A standalone login page served by the plugin at `GET /NostrAuth/LoginPage`
+(anonymous, next to its vendored nostr-tools bundle at `GET /NostrAuth/nostr.mjs`).
+Owners link it from Dashboard → General → Branding (login disclaimer or custom CSS);
+jellyfin-web has no plugin hook to replace the login page itself. The page presents:
+a "Sign in with Nostr" button (NIP-07 if `window.nostr` exists), a bunker-paste field
+(`bunker://`, or a NIP-05 that resolves one), and a `nostrconnect://` QR. All paths
+produce the NIP-98 header — with the payload tag computed from the raw body bytes,
+never via nostr-tools' `nip98.hashPayload` — and POST to the login endpoint. Bunker
+responses are given the 60-second budget the design mandates. On success the page
+reads `/System/Info/Public` for the server id and writes a
+`jellyfin_credentials` localStorage server entry (`Id`, `UserId`, `AccessToken`,
+`ManualAddress`, `LastConnectionMode = 2`) exactly in the shape
+`jellyfin-apiclient`'s connection manager consumes, then redirects to the web root —
+so jellyfin-web auto-signs in with the issued token on the next load.
 
 ## Diagrams
 
@@ -229,6 +239,9 @@ on success the snippet stores the access token the way the standard client does.
   reuse of existing users, unusable passwords, provider id assignment.
 - `tests/Jellyfin.Plugin.NostrAuth.Tests/LoginEndpointTests.cs` — endpoint response
   contract (200 shape, 401 reason codes).
+- `tests/Jellyfin.Plugin.NostrAuth.Tests/LoginPageTests.cs` — the pre-login page
+  and vendored nostr-tools bundle are served anonymously, embedded in the plugin,
+  and never use `nip98.hashPayload`.
 - `tests/Jellyfin.Plugin.NostrAuth.Tests/NostrKeysTests.cs` — list keypair generation
   and bech32 npub encoding round-trips.
 - `tests/Jellyfin.Plugin.NostrAuth.Tests/NostrStatusTests.cs` — dashboard status

@@ -58,4 +58,17 @@ meta-plugins build for every push.
 4. Viewers log in on the Nostr login page with a NIP-07 extension, a NIP-46
    bunker, or Amber; the plugin verifies the signed event, checks the
    allowlist, provisions the user on first login, and issues a Jellyfin
-   session.
+   session. The login page lives at `/NostrAuth/LoginPage`; link it from
+   Dashboard → General → Branding (login disclaimer or custom CSS).
+
+## Login page bundle
+
+`src/Jellyfin.Plugin.NostrAuth/Web/nostr.mjs` is a vendored, minified bundle of
+nostr-tools (the same version `tests/fixtures` signs fixtures with, so
+client↔server interop is pinned). Regenerate it after bumping nostr-tools:
+
+```
+cd tests/fixtures && npm install
+npx esbuild snippet-entry.mjs --bundle --format=esm --platform=browser \
+    --target=es2020 --minify --outfile=../../src/Jellyfin.Plugin.NostrAuth/Web/nostr.mjs
+```

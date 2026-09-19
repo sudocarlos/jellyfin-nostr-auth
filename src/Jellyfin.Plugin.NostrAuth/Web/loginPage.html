@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in with Nostr</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0;
+        }
+        main { max-width: 30rem; width: 100%; padding: 1.5rem; }
+        h1 { font-size: 1.3rem; margin: 0 0 0.25rem; }
+        p.hint { font-size: 0.85rem; margin: 0 0 1.25rem; }
+        section { margin-bottom: 1.25rem; padding: 1rem; border-radius: 8px;
+                  border: 1px solid color-mix(in srgb, currentColor 20%, transparent); }
+        h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+        button {
+            display: block; width: 100%; padding: 0.6rem 1rem; margin: 0.25rem 0;
+            border-radius: 6px; border: 1px solid currentColor; background: transparent;
+            color: inherit; font: inherit; cursor: pointer;
+        }
+        button:disabled { opacity: 0.5; }
+        input {
+            box-sizing: border-box; width: 100%; padding: 0.5rem; margin: 0.25rem 0;
+            border-radius: 6px; border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+            background: transparent; color: inherit; font: inherit;
+        }
+        .hidden { display: none; }
+        #status { min-height: 1.2rem; font-size: 0.85rem; margin-top: 0.5rem; }
+        #qrcode svg { max-width: 100%; height: auto; background: #fff; }
+        label { font-size: 0.8rem; display: block; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Sign in with Nostr</h1>
+    <p>Prove control of an authorized Nostr key to sign in. Your signer produces a
+       NIP-98 signed event that this server verifies; no passwords are involved.</p>
+
+    <section>
+        <h2>Nostr extension (NIP-07)</h2>
+        <button id="Nip07Button" type="button">Sign in with browser extension</button>
+    </section>
+
+    <section>
+        <h2>Remote signer / bunker (NIP-46)</h2>
+        <input id="BunkerInput" type="text" placeholder="bunker://… (from Amber, nsec.app, …)" autocomplete="off">
+        <button id="BunkerButton" type="button">Sign in with bunker</button>
+        <button id="NostrConnectButton" type="button">Get a nostrconnect link</button>
+        <div id="QrArea" class="hidden"></div>
+        <label for="RelaysInput">Relays the signer should reach you on (nostrconnect):</label>
+        <input id="ConnectRelays" type="text" value="wss://relay.damus.io, wss://nos.lol" autocomplete="off">
+    </section>
+
+    <div id="status" aria-live="polite"></div>
+</main>
+
+<script type="module">
+import * as NT from './nostr.mjs';
+
+const KIND_HTTP_AUTH = 27235;
+const BUNKER_BUDGET_MS = 60000;
+const loginEndpoint = new URL('Login', location.href).href;
+const webRoot = new URL('..', location.href).href;
+
+const statusEl = document.querySelector('#status');
+const qrArea = document.querySelector('#QrArea');
+
+function setStatus(text) { statusEl.textContent = text; }
+function setBusy() { setStatus('Waiting for your signer…'); }
+
+function deviceId() {
+    let id = localStorage.getItem('jellyfin-nostr-auth-device-id');
+    if (!id) {
+        id = crypto.randomUUID ? crypto.randomUUID() : crypto.getRandomValues(new Uint8Array(16)).join('');
+        localStorage.setItem('jellyfin-nostr-auth-device-id', id);
+    }
+    return id;
+}
+
+function sha256Hex(text) {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(digest =>
+        [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join(''));
+}
+
+// NIP-98 event. The payload tag is the sha256 of the RAW request body bytes,
+// computed here rather than via nostr-tools' nip98 payload helper — that
+// helper double-encodes string bodies (JSON.stringify), which would diverge
+// from the server.
+async function buildAuthHeader(signer) {
+    const body = JSON.stringify({
+        deviceId: deviceId(),
+        clientName: 'Nostr Auth Login',
+        clientVersion: '1.0'
+    });
+    const payloadHash = await sha256Hex(body);
+
+    const event = {
+        kind: KIND_HTTP_AUTH,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [
+            ['u', loginEndpoint],
+            ['method', 'POST'],
+            ['payload', payloadHash]
+        ],
+        content: ''
+    };
+    event.pubkey = await signer.getPublicKey();
+    const signed = await signer.signEvent(event);
+
+    return { header: 'Nostr ' + btoa(JSON.stringify(signed)), body };
+}
+
+const failureMessages = {
+    invalid_event: 'The signer produced an event the server could not read.',
+    expired_event: 'The signed event is too old — check that this device\u2019s clock is correct and retry.',
+    url_mismatch: 'The event was bound to a different URL; reload this page and retry.',
+    method_mismatch: 'The event was bound to a different HTTP method.',
+    not_in_allowlist: 'This key is not on the server\u2019s allowlist. Ask the server owner for access.',
+    allowlist_stale: 'The server\u2019s allowlist is too old; try again after the next sync.',
+    allowlist_unavailable: 'The server cannot reach the allowlist right now; try again later.',
+    auth_rejected: 'The server refused this login (device restrictions or session limit).'
+};
+
+async function login(signer) {
+    setBusy();
+    const { header, body } = await buildAuthHeader(signer);
+    const response = await fetch(loginEndpoint, {
+        method: 'POST',
+        headers: { Authorization: header, 'Content-Type': 'application/json' },
+        body: body
+    });
+    const result = await response.json();
+
+    if (response.status === 200) {
+        setStatus('Signed in as ' + (result.user?.name ?? result.user?.Name ?? '…') + '. Opening Jellyfin…');
+        await handOffToWebClient(result);
+        return;
+    }
+
+    if (response.status === 503) {
+        setStatus('The server\u2019s allowlist is unreachable right now; try again later.');
+        return;
+    }
+
+    setStatus(failureMessages[result.reason] || 'Sign-in failed (' + (result.reason ?? response.status) + ').');
+}
+
+// Store the issued token exactly the way jellyfin-web does: a server entry in
+// the jellyfin_credentials localStorage document, with the server id taken
+// from the public system info so jellyfin-web recognizes this server on
+// startup and auto-signs in with the token.
+async function handOffToWebClient(result) {
+    const info = await (await fetch(new URL('System/Info/Public', webRoot))).json();
+    const address = webRoot.href.replace(/\/$/, '');
+
+    const credentials = JSON.parse(localStorage.getItem('jellyfin_credentials') || '{}');
+    credentials.Servers = credentials.Servers || [];
+
+    let server = credentials.Servers.find(s => s.Id === info.Id);
+    if (!server) {
+        server = { Id: info.Id };
+        credentials.Servers.push(server);
+    }
+    server.Name = server.Name || info.ServerName;
+    server.ManualAddress = address;
+    server.DateLastAccessed = new Date().getTime();
+    server.LastConnectionMode = 2; // Manual: jellyfin-web reconnects via ManualAddress
+    server.UserId = result.user?.id ?? result.user?.Id;
+    server.AccessToken = result.accessToken ?? result.AccessToken;
+
+    localStorage.setItem('jellyfin_credentials', JSON.stringify(credentials));
+    setTimeout(() => { location.href = webRoot.href; }, 600);
+}
+
+function nip07Signer() {
+    if (!window.nostr) return null;
+    return {
+        getPublicKey: () => window.nostr.getPublicKey(),
+        signEvent: event => window.nostr.signEvent(event)
+    };
+}
+
+function clientSecretKey() {
+    return NT.pure.generateSecretKey();
+}
+
+async function bunkerSignerFromInput(input) {
+    const clientSecret = NT.pure.generateSecretKey();
+    const pointer = await NT.nip46.parseBunkerInput(input);
+    if (pointer) {
+        setStatus('Connecting to the bunker…');
+        return NT.nip46.BunkerSigner.fromBunker(clientSecret, pointer);
+    }
+
+    // Not a bunker:// URL (or resolvable NIP-05): run the nostrconnect flow —
+    // show a QR/link the signer scans, then wait up to the design budget.
+    const relays = document.querySelector('#ConnectRelays').value
+        .split(',').map(r => r.trim()).filter(Boolean);
+    const uri = NT.nip46.createNostrConnectURI({
+        clientPubkey: NT.pure.getPublicKey(clientSecret),
+        relays: relays,
+        secret: deviceId()
+    });
+
+    qrArea.classList.remove('hidden');
+    const qr = NT.qrcode(0, 'M');
+    qr.addData(uri);
+    qr.make();
+    qrArea.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0 });
+    setStatus('Scan the QR with your signer, or open the link on that device. Waiting up to 60s…');
+
+    return NT.nip46.BunkerSigner.fromURI(clientSecret, uri, {}, BUNKER_BUDGET_MS);
+}
+
+document.querySelector('#Nip07Button').addEventListener('click', async () => {
+    const signer = nip07Signer();
+    if (!signer) {
+        setStatus('No NIP-07 extension detected (Alby, nos2x, …).');
+        return;
+    }
+    try { await login(signer); } catch (err) { setStatus('Sign-in failed: ' + (err?.message ?? err)); }
+});
+
+document.querySelector('#BunkerButton').addEventListener('click', async () => {
+    const input = document.querySelector('#BunkerInput').value.trim();
+    if (!input) {
+        setStatus('Paste a bunker:// link (or NIP-05 identifier) first.');
+        return;
+    }
+    try {
+        const signer = await bunkerSignerFromInput(input);
+        await login(signer);
+    } catch (err) {
+        setStatus('Bunker connection failed: ' + (err?.message ?? err));
+    }
+});
+
+document.querySelector('#NostrConnectButton').addEventListener('click', async () => {
+    try {
+        const signer = await bunkerSignerFromInput('');
+        setStatus('Bunker connected. Signing in…');
+        await login(signer);
+    } catch (err) {
+        setStatus('No nostrconnect response within the 60s budget; try again.');
+    }
+});
+</script>
+</body>
+</html>

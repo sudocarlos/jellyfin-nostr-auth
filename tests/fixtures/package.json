@@ -10,5 +10,9 @@
   "type": "commonjs",
   "dependencies": {
     "nostr-tools": "^2.25.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "qrcode-generator": "^2.0.4"
   }
 }

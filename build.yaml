@@ -5,6 +5,7 @@ version: "0.1.0.0"
 targetAbi: "12.1.0.0"
 framework: "net10.0"
 owner: "geru"
+image: "icon.png"
 overview: "Nostr login for Jellyfin"
 description: >
   Replaces username/password login with Nostr authentication for the web
