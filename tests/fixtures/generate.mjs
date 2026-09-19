@@ -5,9 +5,10 @@
 // never expire. Run: npm install && node generate.mjs
 import { writeFileSync } from 'node:fs';
 import * as NostrTools from 'nostr-tools';
+import { schnorr } from '@noble/curves/secp256k1.js';
 import { createHash } from 'node:crypto';
 
-const { generateSecretKey, getPublicKey, finalizeEvent, nip19, nip44 } = NostrTools;
+const { generateSecretKey, getPublicKey, getEventHash, finalizeEvent, nip19, nip44 } = NostrTools;
 
 const hex = (bytes) => Buffer.from(bytes).toString('hex');
 const fromHex = (h) => new Uint8Array(Buffer.from(h, 'hex'));
@@ -28,6 +29,18 @@ const KEYS = {
   },
 };
 for (const k of Object.values(KEYS)) k.pkHex = getPublicKey(fromHex(k.skHex));
+
+// NOTE: deterministic signing — nostr-tools' finalizeEvent signs with a RANDOM
+// BIP-340 aux nonce, so its signatures are not reproducible even for fixed
+// keys. Sign manually with a fixed aux nonce (same rationale as the NIP-44
+// nonce below: throwaway test keys, reproducibility only).
+const AUX_NONCE = new Uint8Array(32).fill(0x99);
+const signDeterministically = (event, skHex) => {
+  const ev = { ...event, pubkey: getPublicKey(fromHex(skHex)) };
+  ev.id = getEventHash(ev);
+  ev.sig = Buffer.from(schnorr.sign(fromHex(ev.id), fromHex(skHex), AUX_NONCE)).toString('hex');
+  return ev;
+};
 
 const describeKey = (k) => ({
   name: k === KEYS.list ? 'list' : k === KEYS.userAuthorized ? 'userAuthorized' : k === KEYS.userUnauthorized ? 'userUnauthorized' : 'attacker',
@@ -53,58 +66,58 @@ const encryptToSelf = (plaintext, now) => {
 
 const BASE = 1760000000; // fixture epoch; verifiers use the `now` field, never real time
 
-const encryptedListEvent = finalizeEvent(
+const encryptedListEvent = signDeterministically(
   {
     kind: 10000,
     created_at: BASE,
     tags: [],
     content: encryptToSelf(allowedTags, BASE),
   },
-  fromHex(KEYS.list.skHex),
+  KEYS.list.skHex,
 );
 
 // Some clients publish "private" lists with plaintext p-tags — read as fallback.
-const plaintextListEvent = finalizeEvent(
+const plaintextListEvent = signDeterministically(
   {
     kind: 10000,
     created_at: BASE,
     tags: [['p', KEYS.userAuthorized.pkHex]],
     content: '',
   },
-  fromHex(KEYS.list.skHex),
+  KEYS.list.skHex,
 );
 
 // Advanced variant: NIP-78 app-specific data with a d tag.
-const kind30078Event = finalizeEvent(
+const kind30078Event = signDeterministically(
   {
     kind: 30078,
     created_at: BASE,
     tags: [['d', 'jellyfin-allowlist']],
     content: encryptToSelf(JSON.stringify({ allowed: [KEYS.userAuthorized.pkHex] }), BASE),
   },
-  fromHex(KEYS.list.skHex),
+  KEYS.list.skHex,
 );
 
 // Same kind/author but OLDER and granting the unauthorized user — must be ignored.
-const olderListEvent = finalizeEvent(
+const olderListEvent = signDeterministically(
   {
     kind: 10000,
     created_at: BASE - 100,
     tags: [['p', KEYS.userUnauthorized.pkHex]],
     content: '',
   },
-  fromHex(KEYS.list.skHex),
+  KEYS.list.skHex,
 );
 
 // Valid shape but authored by the wrong key — must be rejected.
-const attackerListEvent = finalizeEvent(
+const attackerListEvent = signDeterministically(
   {
     kind: 10000,
     created_at: BASE,
     tags: [['p', KEYS.userUnauthorized.pkHex]],
     content: '',
   },
-  fromHex(KEYS.attacker.skHex),
+  KEYS.attacker.skHex,
 );
 
 const allowlist = {
@@ -161,9 +174,9 @@ const nip98Event = ({ sk, url, method, createdAt, kind = 27235, withPayload = fa
   // (nostr-tools' hashPayload hashes JSON.stringify(payload) instead —
   // see the interop note in docs/design.md; we follow the spec.)
   tags.push(['payload', createHash('sha256').update(BODY).digest('hex')]);
-  const ev = finalizeEvent(
+  const ev = signDeterministically(
     { kind, created_at: createdAt, tags, content: '' },
-    fromHex(sk.skHex),
+    sk.skHex,
   );
   if (tamper) {
     const flipped = ev.sig.startsWith('0') ? '1' + ev.sig.slice(1) : '0' + ev.sig.slice(1);

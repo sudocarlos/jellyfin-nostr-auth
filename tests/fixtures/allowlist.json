@@ -36,7 +36,7 @@
         "content": "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXzMFjTmHesxDJqyb4KG1FYa+pOPwNvQK7gx18wnIHvd6QKyUlBYpOke2qBaDnin+y+BrMz1SAo+m0ee5fPbOcObHLsnGuopD+Erh8tdGCQsRdgJdbeeAYuBCmHR4w6lOJO8D/ioaVM1rt65+2iQnYePUniwW7VMiewex7LQmnJIJbQ==",
         "pubkey": "47fb6fa4575b736ee109ba8a9d00b9cccd4d736dd4ca767aee9802f3423d76d7",
         "id": "85f2a83164799e68527182c19ee170097534c6b02a73e61e454cb9f0bfe20c6a",
-        "sig": "d83e778331ce62e4e5935b702e50e3a235237a07fa2281c906178537ca82625febf71bb8258ad5b602190761d9492e4ddb0e594adb5682f86ffa70ea2737d860"
+        "sig": "7369d4c576b158ce73bcf678b69e8b272270681ed85233c40e9d7a8925d99f9052262c611f6ed536ffc95aa49f49f1bde88c2137c3ebf8be4c267e585061bdb8"
       },
       "expectAuthorized": [
         "4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa"
@@ -61,7 +61,7 @@
         "content": "",
         "pubkey": "47fb6fa4575b736ee109ba8a9d00b9cccd4d736dd4ca767aee9802f3423d76d7",
         "id": "65e259692dcfb4a90a16598001f91b81e9d533bb941d030528a46df720295ec9",
-        "sig": "fbfbe02cffa41d9d9e0a339a6cb249210967f7f7b043e00ddc586e64f039af5beee6dceeac7d724f46756bd8a4668cec3374c647261bfcb7b8c771afb4e0c4cf"
+        "sig": "9a193c9bd0633d4e6840a8c3ce5201c17fec59525366c84e2c1779016ef5c0f0b826f35c4052ecf0f4eb42b70b1aa7ed67223e373d3b24d04e4407dd1b638262"
       },
       "expectAuthorized": [
         "4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa"
@@ -86,7 +86,7 @@
         "content": "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXykl9HqbNI8Wd66K78/1RYPvprXxYvYO7l0upg6dSqYnR/ORxkAoYU62oReFxSyqwbdoZG4IBdWmhrHnea2YIuKRKZ7JvY8Srl2EmOYnaClMCwJdbeeAYuBCmHR4w6lOJO+DM5kTtNafJfdobK5wh34XmEBMRpej1U89PE+goN6qcQ==",
         "pubkey": "47fb6fa4575b736ee109ba8a9d00b9cccd4d736dd4ca767aee9802f3423d76d7",
         "id": "89af983261ada549098e68c82b0dc2df4999ca0e9adb1a52e29dbc457b4bb6c0",
-        "sig": "74e4495d786b2577f689fbf0abdf238e318b9c0a229bf39796553d6f70c5690ecac6bcb69e83f65887d030af087a4d34adb4a810542404de466971f71904ae66"
+        "sig": "ab80127ca35966853c57f6a460a9f88e59bd62458580755aeeb72be8ac0a1b25fc531d88cc81e951ad0a130850f063d64c08a170147e509f54b9931ccc8cd0c1"
       },
       "expectAuthorized": [
         "4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa"
@@ -108,7 +108,7 @@
           "content": "",
           "pubkey": "47fb6fa4575b736ee109ba8a9d00b9cccd4d736dd4ca767aee9802f3423d76d7",
           "id": "62619d2b2e720d1a135216e8188387a169af527b418c10cd065534db6040f8ec",
-          "sig": "5238c021ffe6949551bbd8fe1e955bd90e2f60cbff561e0f6f6d247058cc4cfeebbc13acb04d4d335bbfab2ea0ada65edfa90a76ce3a2f37ca9d9e72c1492826"
+          "sig": "506b147b93e2fc16850158d1dfe2011c199c608f83f1afb5dd5f17a3ccd0452b7f8b3ac946b095e72971284c8faeca8f1aa6189d820f3f4e601ad1de2290edef"
         },
         {
           "kind": 10000,
@@ -117,7 +117,7 @@
           "content": "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXzMFjTmHesxDJqyb4KG1FYa+pOPwNvQK7gx18wnIHvd6QKyUlBYpOke2qBaDnin+y+BrMz1SAo+m0ee5fPbOcObHLsnGuopD+Erh8tdGCQsRdgJdbeeAYuBCmHR4w6lOJO8D/ioaVM1rt65+2iQnYePUniwW7VMiewex7LQmnJIJbQ==",
           "pubkey": "47fb6fa4575b736ee109ba8a9d00b9cccd4d736dd4ca767aee9802f3423d76d7",
           "id": "85f2a83164799e68527182c19ee170097534c6b02a73e61e454cb9f0bfe20c6a",
-          "sig": "d83e778331ce62e4e5935b702e50e3a235237a07fa2281c906178537ca82625febf71bb8258ad5b602190761d9492e4ddb0e594adb5682f86ffa70ea2737d860"
+          "sig": "7369d4c576b158ce73bcf678b69e8b272270681ed85233c40e9d7a8925d99f9052262c611f6ed536ffc95aa49f49f1bde88c2137c3ebf8be4c267e585061bdb8"
         }
       ],
       "now": 1760000000,
@@ -143,7 +143,7 @@
         "content": "",
         "pubkey": "3c72addb4fdf09af94f0c94d7fe92a386a7e70cf8a1d85916386bb2535c7b1b1",
         "id": "6e735a18beb71eb17773d2379b67548ebe9ca94c85de536d0f670d64d6b543a4",
-        "sig": "a19813ce88b847e52c07c5710049675659eed5d29c30786449f5ba9ad2035bd4acee94df897143dc15a2b877b4aaf7802e4cb101bcf2481a4e1379c865620446"
+        "sig": "a72e4bef2b7c9f468ec800c51dd7dae07feb2f1953251bb87d5c8f5088c060957606f1c96d34bedfbf494ee049a797fd937b0dc5e8a3a8ed6f4f33740101d738"
       },
       "expectError": "invalid_signature",
       "format": "bad-author"
