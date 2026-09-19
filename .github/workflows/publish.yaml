@@ -1,0 +1,88 @@
+name: '🚀 Publish Plugin'
+
+on:
+  release:
+    types:
+      - released
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # On release triggers use the release tag; on manual dispatch, the
+      # latest release.
+      - name: Resolve version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |-
+          if [[ -n "${{ github.event.release.tag_name }}" ]]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="$(gh release view --repo "${{ github.repository }}" --json tagName -q .tagName)"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Jellyfin Plugin
+        uses: oddstr13/jellyfin-plugin-repository-manager@9497a0a499416cc572ed2e07a391d9f943a37b4d # v1.1.1
+        id: jprm
+        with:
+          version: ${{ steps.version.outputs.version }}
+          dotnet-target: net10.0
+
+      - name: Prepare checksums
+        run: |-
+          cd artifacts
+          for file in ./*.zip; do
+            md5sum "${file#./}" >> "${file%.zip}.md5"
+            sha256sum "${file#./}" >> "${file%.zip}.sha256"
+          done
+
+      - name: Upload Release Assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ steps.version.outputs.tag }}" ./artifacts/* --repo "${{ github.repository }}" --clobber
+
+      # Third-party self-hosted catalog: manifest.json on the gh-pages branch,
+      # plugin zips served straight from the GitHub release assets.
+      - name: Update Plugin Catalog
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PIP_BREAK_SYSTEM_PACKAGES: '1'
+        run: |-
+          python3 -m pip install -q jprm
+          TAG="${{ steps.version.outputs.tag }}"
+          ZIP="${{ steps.jprm.outputs.artifact }}"
+          ZIP_NAME="$(basename "$ZIP")"
+          PLUGIN_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${ZIP_NAME}"
+
+          rm -rf gh-pages
+          git clone --branch gh-pages --depth 1 \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" gh-pages \
+            2>/dev/null || (mkdir gh-pages && cd gh-pages && git init -b gh-pages)
+          cd gh-pages
+
+          test -f manifest.json || echo '[]' > manifest.json
+          jprm repo add \
+            --url "https://sudocarlos.github.io/jellyfin-nostr-auth" \
+            --plugin-url "$PLUGIN_URL" \
+            ./manifest.json "$ZIP"
+
+          git add manifest.json
+          git -c user.name="github-actions[bot]" \
+              -c user.email="github-actions[bot]@users.noreply.github.com" \
+              commit -m "catalog: add ${ZIP_NAME}"
+          git push origin gh-pages
