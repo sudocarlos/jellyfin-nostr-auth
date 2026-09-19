@@ -22,6 +22,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- ASP.NET Core test host for the login endpoint contract tests. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The plugin project compiles against these with ExcludeAssets=runtime;
+         the tests exercise the Jellyfin-backed seams, so bring them at runtime. -->
+    <PackageReference Include="Jellyfin.Controller" Version="12.1.0" />
+    <PackageReference Include="Jellyfin.Model" Version="12.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Jellyfin.Plugin.NostrAuth\Jellyfin.Plugin.NostrAuth.csproj" />
     <ProjectReference Include="..\..\src\NostrAuth.Core\NostrAuth.Core.csproj" />
   </ItemGroup>
 

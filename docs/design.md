@@ -95,10 +95,13 @@ this one server's access list, nothing else.
   responses before surfacing a retryable error.
 
 - **User provisioning: npub → Jellyfin user, auto-created.** On first successful login,
-  the plugin creates a Jellyfin user via `IUserManager.CreateUserAsync`, sets
-  `AuthenticationProviderId` to the plugin's type name, and assigns an unusable random
-  password (SSO-plugin pattern). The npub→user mapping is stored in plugin configuration
-  and re-resolved on later logins. Removal of the npub from the allowlist prevents new
+  the plugin creates a Jellyfin user via `IUserManager.CreateUserAsync`, named
+  after the bech32 npub, sets `AuthenticationProviderId` to the plugin's
+  identity (`Jellyfin.Plugin.NostrAuth`), and assigns an unusable random
+  password (SSO-plugin pattern). The npub→user mapping is stored in plugin
+  configuration and re-resolved on later logins; a user deleted underneath the
+  mapping is re-provisioned under the same npub-derived name. Removal of the
+  npub from the allowlist prevents new
   sessions but does not revoke live sessions — Jellyfin's own session lifetime governs
   those. Rationale: matches existing external-identity plugin precedent (LDAP, SSO) and
   avoids surprising mid-playback cut-offs; owners can force-kill sessions from the
@@ -136,16 +139,31 @@ age, and a warning when the list is plaintext.
 ### Login endpoint
 
 `POST /NostrAuth/Login` — anonymous (no `[Authorize]`), reachable from the login screen.
+Verified against Jellyfin master's authorization setup: the server sets only
+`DefaultPolicy` (applied to endpoints marked `[Authorize]`) and no fallback
+policy, so an unmarked plugin controller action is anonymous; `[AllowAnonymous]`
+is kept as explicit intent.
 
 - Request: `Authorization: Nostr <base64 event>` header per NIP-98; optional JSON body
   `{ deviceId, clientName, clientVersion }` for session metadata (informational only,
   never used for authorization).
 - Response `200`: `AuthenticationResult`-shaped JSON (`user`, `sessionInfo`,
-  `accessToken`, `serverId`) identical in shape to `POST /Users/AuthenticateByName`.
+  `accessToken`, `serverId`) identical in shape to `POST /Users/AuthenticateByName`
+  (serialized camelCase by the plugin so the contract is independent of the
+  host's JSON options).
 - Response `401`: `{ reason }` with machine-readable values:
   `invalid_event`, `expired_event`, `url_mismatch`, `method_mismatch`,
-  `not_in_allowlist`, `allowlist_stale`, `allowlist_unavailable`.
+  `not_in_allowlist`, `allowlist_stale`, `allowlist_unavailable`, plus
+  `auth_rejected` for server-policy rejections surfaced by
+  `ISessionManager.AuthenticateDirect` (device restrictions, max-sessions).
+  The session mint never re-examines the NIP-98 event; its failures are
+  authorization denials, not authentication errors.
 - Response `503` only when `failClosed=true` and the list cannot be fetched.
+
+Provisioned users carry `AuthenticationProviderId` = `Jellyfin.Plugin.NostrAuth`,
+which deliberately names no password authentication provider: password login
+fails closed for these users even if the unusable random password were somehow
+known.
 
 ### Login page snippet
 

@@ -17,7 +17,7 @@ public class AllowlistSyncTests
     public void merges_encrypted_private_list_and_authorizes_allowed_npub()
     {
         var sync = Sync();
-        var (authorized, warning) = sync.Merge(new[] { Event("encrypted private list authorizes userAuthorized") });
+        var (authorized, warning, _) = sync.Merge(new[] { Event("encrypted private list authorizes userAuthorized") });
         Assert.Contains(Hex("userAuthorized"), authorized);
         Assert.DoesNotContain(Hex("userUnauthorized"), authorized);
         Assert.False(warning);
@@ -27,7 +27,7 @@ public class AllowlistSyncTests
     public void falls_back_to_plaintext_p_tags_and_flags_public_list_warning()
     {
         var sync = Sync();
-        var (authorized, warning) = sync.Merge(new[] { Event("plaintext fallback list authorizes userAuthorized, warns about public list") });
+        var (authorized, warning, _) = sync.Merge(new[] { Event("plaintext fallback list authorizes userAuthorized, warns about public list") });
         Assert.Contains(Hex("userAuthorized"), authorized);
         Assert.True(warning);
     }
@@ -36,7 +36,7 @@ public class AllowlistSyncTests
     public void merges_kind_30078_allowlist_with_d_tag()
     {
         var sync = Sync();
-        var (authorized, _) = sync.Merge(new[] { Event("kind 30078 d=jellyfin-allowlist authorizes userAuthorized") });
+        var (authorized, _, _) = sync.Merge(new[] { Event("kind 30078 d=jellyfin-allowlist authorizes userAuthorized") });
         Assert.Contains(Hex("userAuthorized"), authorized);
     }
 
@@ -50,7 +50,7 @@ public class AllowlistSyncTests
             .GetProperty("events").EnumerateArray()
             .Select(ToEvent)
             .ToList();
-        var (authorized, _) = sync.Merge(candidates);
+        var (authorized, _, _) = sync.Merge(candidates);
         Assert.Contains(Hex("userAuthorized"), authorized);
         Assert.DoesNotContain(Hex("userUnauthorized"), authorized);
     }
@@ -59,7 +59,7 @@ public class AllowlistSyncTests
     public void rejects_event_signed_by_wrong_key()
     {
         var sync = Sync();
-        var (authorized, _) = sync.Merge(new[] { Event("event signed by wrong key is rejected") });
+        var (authorized, _, _) = sync.Merge(new[] { Event("event signed by wrong key is rejected") });
         Assert.Empty(authorized);
     }
 
@@ -75,7 +75,7 @@ public class AllowlistSyncTests
     public void allows_pubkey_present_in_cached_allowlist()
     {
         var sync = Sync();
-        var (authorized, _) = sync.Merge(new[] { Event("encrypted private list authorizes userAuthorized") });
+        var (authorized, _, _) = sync.Merge(new[] { Event("encrypted private list authorizes userAuthorized") });
         var evaluator = CachingEvaluator(new AllowlistSnapshot(authorized, Base, Base));
         Assert.True(evaluator.Check(Hex("userAuthorized"), Base + 10).Allowed);
     }
@@ -84,7 +84,7 @@ public class AllowlistSyncTests
     public void rejects_pubkey_absent_from_cached_allowlist()
     {
         var sync = Sync();
-        var (authorized, _) = sync.Merge(new[] { Event("encrypted private list authorizes userAuthorized") });
+        var (authorized, _, _) = sync.Merge(new[] { Event("encrypted private list authorizes userAuthorized") });
         var evaluator = CachingEvaluator(new AllowlistSnapshot(authorized, Base, Base));
         var decision = evaluator.Check(Hex("userUnauthorized"), Base + 10);
         Assert.False(decision.Allowed);
@@ -95,7 +95,7 @@ public class AllowlistSyncTests
     public void rejects_new_logins_when_cached_allowlist_exceeds_max_age()
     {
         var sync = Sync();
-        var (authorized, _) = sync.Merge(new[] { Event("encrypted private list authorizes userAuthorized") });
+        var (authorized, _, _) = sync.Merge(new[] { Event("encrypted private list authorizes userAuthorized") });
         var evaluator = CachingEvaluator(new AllowlistSnapshot(authorized, Base, Base));
         var decision = evaluator.Check(Hex("userAuthorized"), Base + MaxAge + 60);
         Assert.False(decision.Allowed);
@@ -107,7 +107,7 @@ public class AllowlistSyncTests
     {
         // Default fail-open: no fresh fetch available, cache still valid -> allow.
         var sync = Sync();
-        var (authorized, _) = sync.Merge(new[] { Event("encrypted private list authorizes userAuthorized") });
+        var (authorized, _, _) = sync.Merge(new[] { Event("encrypted private list authorizes userAuthorized") });
         var evaluator = CachingEvaluator(new AllowlistSnapshot(authorized, Base, Base));
         Assert.True(evaluator.Check(Hex("userAuthorized"), Base + MaxAge - 60).Allowed);
     }

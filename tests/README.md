@@ -24,11 +24,10 @@ on network or signing at test time.
 
 ## C# xUnit skeleton (requires .NET 10 SDK)
 
-`Jellyfin.Plugin.NostrAuth.Tests/` encodes the expectations. Facts are
-`Skip = "pending implementation"` until the plugin implementation exists; the planned
-API surface is defined in `Contracts/PlannedContracts.cs`.
-
-Once the plugin solution exists:
+`Jellyfin.Plugin.NostrAuth.Tests/` encodes the expectations and runs them against the real
+implementation (all facts un-skipped): `NostrAuth.Core` directly, and the plugin's
+Jellyfin-backed seams (`NostrUserProvisioner`, `NostrLoginService` +
+`NostrAuthController`) behind small in-memory fakes.
 
 ```
 dotnet test tests/Jellyfin.Plugin.NostrAuth.Tests
@@ -39,4 +38,5 @@ Test classes:
 - `AllowlistSyncTests` — decryption, plaintext fallback, newest-wins, staleness,
   fail-open/closed.
 - `UserMappingTests` — npub→user provisioning, unusable passwords, provider id.
-- `LoginEndpointTests` — HTTP status/reason-code contract.
+- `LoginEndpointTests` — HTTP status/reason-code contract, through the real
+  controller in an in-memory ASP.NET Core host.

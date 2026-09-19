@@ -13,6 +13,15 @@ public record AllowlistDecision(bool Allowed, string? Reason)
     public const string AllowlistUnavailable = "allowlist_unavailable";
 }
 
+/// <summary>Outcome of merging relay-fetched allowlist events.</summary>
+/// <param name="AuthorizedPubkeysHex">The pubkeys now authorized, empty when no valid event was seen.</param>
+/// <param name="PublicListWarning">Whether the winning event was plaintext (public-list warning for the dashboard).</param>
+/// <param name="EventCreatedAtUnix">The winning event's created_at, null when no valid event was seen; feeds staleness policy.</param>
+public sealed record AllowlistMergeResult(
+    IReadOnlyCollection<string> AuthorizedPubkeysHex,
+    bool PublicListWarning,
+    long? EventCreatedAtUnix);
+
 /// <summary>Feed relay-fetched allowlist events into the sync layer.</summary>
 public interface IAllowlistSync
 {
@@ -21,9 +30,7 @@ public interface IAllowlistSync
     /// authored by another key or with an invalid signature, keeps the newest,
     /// decrypts NIP-44 private content or falls back to plaintext p-tags.
     /// </summary>
-    /// <returns>The pubkeys now authorized, and whether the winning event was plaintext
-    /// (public-list warning for the dashboard).</returns>
-    (IReadOnlyCollection<string> AuthorizedPubkeysHex, bool PublicListWarning) Merge(IReadOnlyList<NostrEvent> candidates);
+    AllowlistMergeResult Merge(IReadOnlyList<NostrEvent> candidates);
 }
 
 /// <summary>Cached state of the decrypted allowlist.</summary>
@@ -60,7 +67,7 @@ public sealed class AllowlistSync : IAllowlistSync
         _listPubkeyHex = listPubkeyHex.ToLowerInvariant();
     }
 
-    public (IReadOnlyCollection<string> AuthorizedPubkeysHex, bool PublicListWarning) Merge(IReadOnlyList<NostrEvent> candidates)
+    public AllowlistMergeResult Merge(IReadOnlyList<NostrEvent> candidates)
     {
         var winner = candidates
             .Where(IsAuthoritative)
@@ -69,7 +76,7 @@ public sealed class AllowlistSync : IAllowlistSync
 
         if (winner is null)
         {
-            return (Array.Empty<string>(), false);
+            return new(Array.Empty<string>(), false, null);
         }
 
         if (winner.Kind == KindPrivateList || winner.Kind == KindAppData)
@@ -77,11 +84,11 @@ public sealed class AllowlistSync : IAllowlistSync
             var (pubkeys, isPlaintext) = Read(winner);
             if (pubkeys is not null)
             {
-                return (pubkeys, isPlaintext);
+                return new(pubkeys, isPlaintext, winner.CreatedAt?.ToUnixTimeSeconds());
             }
         }
 
-        return (Array.Empty<string>(), false);
+        return new(Array.Empty<string>(), false, winner.CreatedAt?.ToUnixTimeSeconds());
     }
 
     private bool IsAuthoritative(NostrEvent e)
