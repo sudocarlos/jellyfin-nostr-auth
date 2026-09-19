@@ -12,7 +12,7 @@ https://sudocarlos.github.io/jellyfin-nostr-auth/manifest.json
 ```
 
 Install **Nostr Auth** from the catalog and restart Jellyfin when prompted.
-The plugin targets Jellyfin 12.x (`targetAbi 12.1.0.0`).
+The plugin targets Jellyfin 12.x (`targetAbi 12.0.0.0`).
 
 ## 2. Open the plugin configuration
 

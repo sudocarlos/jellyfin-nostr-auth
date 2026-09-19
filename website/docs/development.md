@@ -60,7 +60,7 @@ npx esbuild snippet-entry.mjs --bundle --format=esm --platform=browser \
 jprm plugin build .
 ```
 
-`build.yaml` pins `targetAbi: 12.1.0.0` (matching the packages we compile
+`build.yaml` pins `targetAbi: 12.0.0.0` (the floor the packages we compile
 against) and lists the plugin, core, and third-party runtime assemblies
 explicitly — jprm ships only the listed artifacts. Host-provided
 `Jellyfin.*`/`MediaBrowser.*` assemblies are never shipped

@@ -60,6 +60,6 @@ the dashboard like any other user.
 
 ## The plugin is not listed in the catalog
 
-The catalog manifest targets `targetAbi 12.1.0.0`; it is not offered to
+The catalog manifest targets `targetAbi 12.0.0.0`; it is not offered to
 servers older than that. Check Dashboard → Diagnostics → About for your
 server version, and refresh the plugin catalog.

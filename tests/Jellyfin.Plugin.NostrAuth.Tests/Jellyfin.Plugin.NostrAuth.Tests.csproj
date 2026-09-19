@@ -30,8 +30,8 @@
   <ItemGroup>
     <!-- The plugin project compiles against these with ExcludeAssets=runtime;
          the tests exercise the Jellyfin-backed seams, so bring them at runtime. -->
-    <PackageReference Include="Jellyfin.Controller" Version="12.1.0" />
-    <PackageReference Include="Jellyfin.Model" Version="12.1.0" />
+    <PackageReference Include="Jellyfin.Controller" Version="12.0.0" />
+    <PackageReference Include="Jellyfin.Model" Version="12.0.0" />
   </ItemGroup>
 
   <ItemGroup>
