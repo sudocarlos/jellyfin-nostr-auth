@@ -16,11 +16,12 @@
                     </div>
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="ListNsec">List nsec</label>
-                        <input id="ListNsec" name="ListNsec" type="password" is="emby-input" />
+                        <input id="ListNsec" name="ListNsec" type="text" is="emby-input" />
                         <div class="fieldDescription">
-                            The allowlist keypair secret (bech32 nsec). Stored server-side to decrypt
-                            the private list; compromise only exposes this one server's access list and
-                            is rotated by generating a new keypair and republishing. Required.
+                            The allowlist keypair secret (bech32 nsec) — readable by design: it is
+                            imported into a Nostr client to publish the list. Stored server-side to
+                            decrypt the private list; compromise only exposes this one server's access
+                            list and is rotated by generating a new keypair and republishing. Required.
                         </div>
                     </div>
                     <div class="inputContainer">
@@ -87,7 +88,7 @@
 
             function nostrAuthFetchStatus() {
                 Dashboard.showLoadingMsg();
-                ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('NostrAuth/Status') })
+                ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('NostrAuth/Status'), dataType: 'json' })
                     .then(function (status) {
                         var notice = document.querySelector('#PreviewNotice');
                         var authorized = document.querySelector('#PreviewAuthorized');
@@ -163,12 +164,12 @@
             document.querySelector('#GenerateKeypair')
                 .addEventListener('click', function () {
                     Dashboard.showLoadingMsg();
-                    ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('NostrAuth/GenerateKeypair') })
+                    ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('NostrAuth/GenerateKeypair'), dataType: 'json' })
                         .then(function (keypair) {
                             Dashboard.hideLoadingMsg();
                             document.querySelector('#ListNpub').value = keypair.npub;
                             document.querySelector('#ListNsec').value = keypair.nsec;
-                            Dashboard.alert('New list keypair generated (npub ' + keypair.npub + '). Import the nsec into a Nostr client, publish the list, then save.');
+                            Dashboard.alert('New list keypair generated. Import the nsec from the List nsec field into a Nostr client, publish the list, then save. (npub ' + keypair.npub + ')');
                         })
                         .catch(function (error) {
                             Dashboard.hideLoadingMsg();
