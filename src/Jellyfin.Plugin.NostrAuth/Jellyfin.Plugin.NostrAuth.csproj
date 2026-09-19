@@ -8,6 +8,7 @@
     <Version>0.1.0</Version>
     <AssemblyVersion>0.1.0.0</AssemblyVersion>
     <FileVersion>0.1.0.0</FileVersion>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
@@ -30,6 +31,11 @@
     <EmbeddedResource Include="Configuration\configPage.html" />
     <EmbeddedResource Include="Web\loginPage.html" />
     <EmbeddedResource Include="Web\nostr.mjs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Ship the license inside the plugin zip (GPL §4 distribution). -->
+    <None Include="..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

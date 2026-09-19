@@ -15,6 +15,7 @@ description: >
   the list keypair is dedicated and trivially rotatable.
 category: "General"
 artifacts:
+- "LICENSE.txt"
 - "Jellyfin.Plugin.NostrAuth.dll"
 - "NostrAuth.Core.dll"
 - "NNostr.Client.dll"

@@ -41,3 +41,4 @@ straight to [Signing In](signing-in.md) if you are a viewer.
 - [Issues & Pull Requests](https://github.com/sudocarlos/jellyfin-nostr-auth) - contributions welcome
 - [Release notes](https://github.com/sudocarlos/jellyfin-nostr-auth/releases) - release history
 - [Design document](https://github.com/sudocarlos/jellyfin-nostr-auth/blob/master/docs/design.md) - the full spec and rationale
+- [License](https://github.com/sudocarlos/jellyfin-nostr-auth/blob/master/LICENSE) - GNU GPL v3.0

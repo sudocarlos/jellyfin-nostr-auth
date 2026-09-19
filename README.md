@@ -27,4 +27,5 @@ the plugin at it. See [Getting Started](https://sudocarlos.github.io/jellyfin-no
 
 - [Issues & Pull Requests](https://github.com/sudocarlos/jellyfin-nostr-auth) — contributions welcome
 - [Releases](https://github.com/sudocarlos/jellyfin-nostr-auth/releases) — installable plugin zips and release history
+- [License](LICENSE) — GNU GPL v3.0
 - [Design document](https://github.com/sudocarlos/jellyfin-nostr-auth/blob/master/docs/design.md) — the full spec and rationale
