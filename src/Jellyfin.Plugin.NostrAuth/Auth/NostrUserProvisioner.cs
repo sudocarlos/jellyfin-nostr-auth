@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
-using NNostr.Client;
 using NNostr.Client.Protocols;
+using NostrAuth.Core;
 
 namespace Jellyfin.Plugin.NostrAuth.Auth;
 
@@ -69,5 +69,5 @@ public sealed class NostrUserProvisioner : IUserProvisioner
 
     /// <summary>Derives the bech32 npub username from a hex pubkey.</summary>
     private static string Nip19Npub(string userPubkeyHex)
-        => NostrExtensions.ParsePubKey(userPubkeyHex).ToNIP19();
+        => NostrKeys.ToNip19Npub(userPubkeyHex);
 }

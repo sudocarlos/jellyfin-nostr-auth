@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using NostrAuth.Core;
 
 namespace Jellyfin.Plugin.NostrAuth.Auth;
-
 /// <summary>
 /// The login pipeline (docs/design.md, "Login endpoint"): verify the NIP-98
 /// event, then the allowlist decision (not_in_allowlist / allowlist_stale /
@@ -18,10 +17,7 @@ namespace Jellyfin.Plugin.NostrAuth.Auth;
 /// </summary>
 public sealed class NostrLoginService : INostrLoginService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
+    private static readonly JsonSerializerOptions JsonOptions = NostrAuthJson.CamelCase;
 
     private readonly INip98Verifier _verifier;
     private readonly Func<AllowlistSnapshot?> _snapshotProvider;

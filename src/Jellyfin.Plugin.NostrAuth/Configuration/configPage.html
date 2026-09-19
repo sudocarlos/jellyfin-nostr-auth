@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Nostr Auth</title>
+</head>
+<body>
+    <div id="NostrAuthConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="NostrAuthConfigForm">
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ListNpub">List npub</label>
+                        <input id="ListNpub" name="ListNpub" type="text" is="emby-input" />
+                        <div class="fieldDescription">The identity that authors the allowlist (bech32 npub). Required.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ListNsec">List nsec</label>
+                        <input id="ListNsec" name="ListNsec" type="password" is="emby-input" />
+                        <div class="fieldDescription">
+                            The allowlist keypair secret (bech32 nsec). Stored server-side to decrypt
+                            the private list; compromise only exposes this one server's access list and
+                            is rotated by generating a new keypair and republishing. Required.
+                        </div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="Relays">Relays</label>
+                        <input id="Relays" name="Relays" type="text" is="emby-input" placeholder="wss://relay1.example, wss://relay2.example" />
+                        <div class="fieldDescription">Comma-separated relays used to fetch the list. Required.</div>
+                    </div>
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="ListKind">List event kind</label>
+                        <select is="emby-select" id="ListKind" name="ListKind" class="emby-select-withcolor emby-select">
+                            <option value="10000">10000 — NIP-51 private list (authorable in every mainstream client)</option>
+                            <option value="30078">30078 — NIP-78 app data, d="jellyfin-allowlist"</option>
+                        </select>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="PollIntervalMinutes">Poll interval (minutes)</label>
+                        <input id="PollIntervalMinutes" name="PollIntervalMinutes" type="number" is="emby-input" min="1" />
+                        <div class="fieldDescription">How often the allowlist is re-fetched from the relays.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="MaxListAgeHours">Max list age (hours)</label>
+                        <input id="MaxListAgeHours" name="MaxListAgeHours" type="number" is="emby-input" min="1" />
+                        <div class="fieldDescription">Past this cache age, new logins fail closed until a fresh list is fetched.</div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="FailClosed" name="FailClosed" type="checkbox" is="emby-checkbox" />
+                            <span>Fail closed when the list cannot be fetched</span>
+                        </label>
+                        <div class="fieldDescription">Off (default): the last-known list stays honored during relay outages.</div>
+                    </div>
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                    <div>
+                        <button is="emby-button" type="button" id="GenerateKeypair" class="raised button-cancel block emby-button">
+                            <span>Generate fresh list keypair</span>
+                        </button>
+                        <div class="fieldDescription">
+                            Generates a dedicated keypair for the allowlist. Paste the nsec into any Nostr
+                            client, publish a private kind-10000 list whose p-tags are the authorized npubs,
+                            then configure the npub/nsec here. Nothing is persisted until you save.
+                        </div>
+                    </div>
+                </form>
+
+                <div id="AllowlistPreview">
+                    <h3>Allowlist preview</h3>
+                    <div class="fieldDescription" id="PreviewNotice"></div>
+                    <div id="PreviewAuthorized"></div>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+            var NostrAuthConfig = {
+                pluginUniqueId: 'a8514093-e868-42c5-8428-22543919e92a'
+            };
+
+            function nostrAuthSetText(element, text) {
+                document.querySelector(element).textContent = text;
+            }
+
+            function nostrAuthFetchStatus() {
+                Dashboard.showLoadingMsg();
+                ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('NostrAuth/Status') })
+                    .then(function (status) {
+                        var notice = document.querySelector('#PreviewNotice');
+                        var authorized = document.querySelector('#PreviewAuthorized');
+                        notice.textContent = '';
+                        authorized.textContent = '';
+
+                        if (!status.configured) {
+                            notice.textContent = 'The allowlist is not configured yet: set the list npub, nsec and relays above.';
+                        } else if (!status.hasSnapshot) {
+                            notice.textContent = 'No allowlist event has been fetched yet; new logins are refused until the first sync succeeds.';
+                        } else {
+                            if (status.publicListWarning) {
+                                notice.textContent = 'Warning: the list is plaintext p-tags, so it is effectively public. Republish it as a NIP-51 private list.';
+                            }
+                            if (status.stale) {
+                                notice.textContent = 'Warning: the cached list is past its max age; new logins are refused until a fresh list is fetched.';
+                            }
+                            if (notice.textContent === '') {
+                                notice.textContent = 'Cached list is fresh.';
+                            }
+                        }
+
+                        for (var i = 0; i < (status.authorizedNpubs || []).length; i++) {
+                            var item = document.createElement('div');
+                            item.textContent = status.authorizedNpubs[i];
+                            authorized.appendChild(item);
+                        }
+                        Dashboard.hideLoadingMsg();
+                    })
+                    .catch(function (error) {
+                        Dashboard.hideLoadingMsg();
+                        nostrAuthSetText('#PreviewNotice', 'Failed to read the allowlist status (see server log).');
+                    });
+            }
+
+            document.querySelector('#NostrAuthConfigPage')
+                .addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(NostrAuthConfig.pluginUniqueId).then(function (config) {
+                        document.querySelector('#ListNpub').value = config.ListNpub || '';
+                        document.querySelector('#ListNsec').value = config.ListNsec || '';
+                        document.querySelector('#Relays').value = (config.Relays || []).join(', ');
+                        document.querySelector('#ListKind').value = config.ListKind || 10000;
+                        document.querySelector('#PollIntervalMinutes').value = config.PollIntervalMinutes || 10;
+                        document.querySelector('#MaxListAgeHours').value = config.MaxListAgeHours || 24;
+                        document.querySelector('#FailClosed').checked = config.FailClosed || false;
+                        Dashboard.hideLoadingMsg();
+                    });
+                    nostrAuthFetchStatus();
+                });
+
+            document.querySelector('#NostrAuthConfigForm')
+                .addEventListener('submit', function (e) {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(NostrAuthConfig.pluginUniqueId).then(function (config) {
+                        config.ListNpub = document.querySelector('#ListNpub').value.trim();
+                        config.ListNsec = document.querySelector('#ListNsec').value.trim();
+                        config.Relays = document.querySelector('#Relays').value
+                            .split(',').map(function (r) { return r.trim(); }).filter(Boolean);
+                        config.ListKind = parseInt(document.querySelector('#ListKind').value, 10);
+                        config.PollIntervalMinutes = parseInt(document.querySelector('#PollIntervalMinutes').value, 10) || 10;
+                        config.MaxListAgeHours = parseInt(document.querySelector('#MaxListAgeHours').value, 10) || 24;
+                        config.FailClosed = document.querySelector('#FailClosed').checked;
+                        ApiClient.updatePluginConfiguration(NostrAuthConfig.pluginUniqueId, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        });
+                    });
+
+                    e.preventDefault();
+                    return false;
+                });
+
+            document.querySelector('#GenerateKeypair')
+                .addEventListener('click', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('NostrAuth/GenerateKeypair') })
+                        .then(function (keypair) {
+                            Dashboard.hideLoadingMsg();
+                            document.querySelector('#ListNpub').value = keypair.npub;
+                            document.querySelector('#ListNsec').value = keypair.nsec;
+                            Dashboard.alert('New list keypair generated (npub ' + keypair.npub + '). Import the nsec into a Nostr client, publish the list, then save.');
+                        })
+                        .catch(function (error) {
+                            Dashboard.hideLoadingMsg();
+                        });
+                });
+        </script>
+    </div>
+</body>
+</html>

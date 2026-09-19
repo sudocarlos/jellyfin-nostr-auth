@@ -40,3 +40,6 @@ Test classes:
 - `UserMappingTests` — npub→user provisioning, unusable passwords, provider id.
 - `LoginEndpointTests` — HTTP status/reason-code contract, through the real
   controller in an in-memory ASP.NET Core host.
+- `NostrKeysTests` — list keypair generation and bech32 npub encoding.
+- `NostrStatusTests` — dashboard status projection (configured/fresh/stale/
+  public-list warning states).

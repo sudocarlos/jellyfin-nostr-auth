@@ -34,10 +34,15 @@ public interface IAllowlistSync
 }
 
 /// <summary>Cached state of the decrypted allowlist.</summary>
+/// <param name="AuthorizedPubkeysHex">The pubkeys currently authorized.</param>
+/// <param name="EventCreatedAtUnix">The winning event's created_at; feeds staleness policy.</param>
+/// <param name="RetrievedAtUnix">When the winning event was fetched; dashboard context.</param>
+/// <param name="PublicListWarning">Whether the winning event was plaintext (dashboard warning).</param>
 public sealed record AllowlistSnapshot(
     IReadOnlyCollection<string> AuthorizedPubkeysHex,
     long EventCreatedAtUnix,
-    long RetrievedAtUnix);
+    long RetrievedAtUnix,
+    bool PublicListWarning = false);
 
 /// <summary>Checks a user pubkey against the cached allowlist, including staleness policy.</summary>
 public interface IAllowlistEvaluator

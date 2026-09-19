@@ -103,7 +103,8 @@ public sealed class NostrAllowlistSyncService : BackgroundService
         _cache.Update(new AllowlistSnapshot(
             result.AuthorizedPubkeysHex,
             createdAt,
-            DateTimeOffset.UtcNow.ToUnixTimeSeconds()));
+            DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            result.PublicListWarning));
 
         if (result.PublicListWarning)
         {

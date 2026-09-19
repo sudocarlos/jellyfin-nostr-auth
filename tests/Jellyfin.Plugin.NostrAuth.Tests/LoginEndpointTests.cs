@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Jellyfin.Plugin.NostrAuth.Auth;
+using Jellyfin.Plugin.NostrAuth.Sync;
 using Jellyfin.Plugin.NostrAuth.Tests.TestSupport;
 using Jellyfin.Plugin.NostrAuth.Controllers;
 using Microsoft.AspNetCore.Builder;
@@ -105,6 +106,10 @@ public class LoginEndpointTests
         builder.Services.AddSingleton<IUserProvisioner>(stubProvisioner);
         builder.Services.AddSingleton<ISessionMinter>(stubMinter);
         builder.Services.AddSingleton<TimeProvider>(timeProvider);
+        builder.Services.AddSingleton<INostrStatusProvider>(new NostrStatusProvider(
+            () => null,
+            () => snapshot,
+            timeProvider));
         builder.Services.AddSingleton<INostrLoginService>(sp => new NostrLoginService(
             sp.GetRequiredService<INip98Verifier>(),
             () => snapshot,
@@ -133,11 +138,6 @@ public class LoginEndpointTests
     }
 
     private sealed record HttpResponse(HttpStatusCode StatusCode, string Body);
-
-    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
-    {
-        public override DateTimeOffset GetUtcNow() => now;
-    }
 
     private sealed class StubProvisioner : IUserProvisioner
     {

@@ -11,7 +11,7 @@ namespace Jellyfin.Plugin.NostrAuth;
 /// with NIP-98 Nostr authentication for the web client, authorized by the
 /// server owner's private Nostr allowlist.
 /// </summary>
-public class Plugin : BasePlugin<PluginConfiguration>
+public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
 {
     /// <summary>Initializes a new instance of the <see cref="Plugin"/> class.</summary>
     /// <param name="applicationPaths">Instance of the <see cref="IApplicationPaths"/> interface.</param>
@@ -30,4 +30,16 @@ public class Plugin : BasePlugin<PluginConfiguration>
 
     /// <summary>Gets the current plugin instance.</summary>
     public static Plugin? Instance { get; private set; }
+
+    /// <inheritdoc />
+    public IEnumerable<PluginPageInfo> GetPages()
+        =>
+        [
+            new PluginPageInfo
+            {
+                Name = Name,
+                DisplayName = "Nostr Auth",
+                EmbeddedResourcePath = $"{GetType().Namespace}.Configuration.configPage.html"
+            }
+        ];
 }

@@ -1,7 +1,12 @@
 using Jellyfin.Plugin.NostrAuth.Auth;
+using Jellyfin.Plugin.NostrAuth.Sync;
+using MediaBrowser.Common.Api;
+using MediaBrowser.Controller.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
+using System.Text.Json;
+using NostrAuth.Core;
 
 namespace Jellyfin.Plugin.NostrAuth.Controllers;
 
@@ -21,12 +26,15 @@ public class NostrAuthController : ControllerBase
     private const long MaxBodyBytes = 64 * 1024;
 
     private readonly INostrLoginService _loginService;
+    private readonly INostrStatusProvider _statusProvider;
 
     /// <summary>Initializes a new instance of the <see cref="NostrAuthController"/> class.</summary>
     /// <param name="loginService">The login pipeline.</param>
-    public NostrAuthController(INostrLoginService loginService)
+    /// <param name="statusProvider">The dashboard-facing allowlist status.</param>
+    public NostrAuthController(INostrLoginService loginService, INostrStatusProvider statusProvider)
     {
         _loginService = loginService;
+        _statusProvider = statusProvider;
     }
 
     /// <summary>
@@ -70,6 +78,38 @@ public class NostrAuthController : ControllerBase
             StatusCode = (int)outcome.StatusCode
         };
     }
+
+    /// <summary>
+    /// The allowlist state for the dashboard preview: decrypted authorized
+    /// npubs, last fetch time, event age, staleness, and the plaintext-list
+    /// warning.
+    /// </summary>
+    /// <response code="200">Status returned.</response>
+    /// <returns>The allowlist status.</returns>
+    [HttpGet("Status")]
+    [Authorize(Policy = Policies.RequiresElevation)]
+    public IActionResult Status()
+        => new ContentResult
+        {
+            Content = JsonSerializer.Serialize(_statusProvider.GetStatus(), NostrAuthJson.CamelCase),
+            ContentType = "application/json"
+        };
+
+    /// <summary>
+    /// Generates a fresh list keypair. Nothing is persisted — the owner
+    /// configures the returned npub/nsec themselves and imports the nsec into
+    /// a Nostr client for publishing the list.
+    /// </summary>
+    /// <response code="200">Keypair returned.</response>
+    /// <returns>The fresh list keypair.</returns>
+    [HttpPost("GenerateKeypair")]
+    [Authorize(Policy = Policies.RequiresElevation)]
+    public IActionResult GenerateKeypair()
+        => new ContentResult
+        {
+            Content = JsonSerializer.Serialize(NostrKeys.Generate(), NostrAuthJson.CamelCase),
+            ContentType = "application/json"
+        };
 
     /// <summary>
     /// The absolute request URL, exactly as the client saw it — NIP-98 binds

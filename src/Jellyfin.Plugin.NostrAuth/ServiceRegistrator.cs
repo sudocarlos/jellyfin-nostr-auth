@@ -26,6 +26,10 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<INostrUserLinks, JellyfinNostrUserLinks>();
         serviceCollection.AddSingleton<IUserProvisioner, NostrUserProvisioner>();
         serviceCollection.AddSingleton<ISessionMinter, JellyfinSessionMinter>();
+        serviceCollection.AddSingleton<INostrStatusProvider>(sp => new NostrStatusProvider(
+            () => Plugin.Instance?.Configuration,
+            () => sp.GetRequiredService<AllowlistCache>().Snapshot,
+            sp.GetRequiredService<TimeProvider>()));
 
         serviceCollection.AddSingleton<INostrLoginService>(sp => new NostrLoginService(
             sp.GetRequiredService<INip98Verifier>(),

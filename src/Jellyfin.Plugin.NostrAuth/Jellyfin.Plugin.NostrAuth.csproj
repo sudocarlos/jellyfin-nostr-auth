@@ -21,6 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Configuration\configPage.html" />
+    <!-- Embedded resource: served by IHasWebPages as the dashboard config page. -->
+    <EmbeddedResource Include="Configuration\configPage.html" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\NostrAuth.Core\NostrAuth.Core.csproj" />
   </ItemGroup>
 
