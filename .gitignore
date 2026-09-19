@@ -5,3 +5,4 @@ obj/
 site/
 website/site/
 website/.cache/
+log_*.log
