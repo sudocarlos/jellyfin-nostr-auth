@@ -1,30 +1,22 @@
 [
-    {
-        "guid": "a8514093-e868-42c5-8428-22543919e92a",
-        "name": "Nostr Auth",
-        "description": "Replaces username/password login with Nostr authentication for the web client. Viewers log in with a NIP-98 signed event (NIP-07 extension, NIP-46 bunker, or Amber), and access is authorized by the server owner's private Nostr allowlist. The plugin holds no owner-identity key material; the list keypair is dedicated and trivially rotatable.\n",
-        "overview": "Nostr login for Jellyfin",
-        "owner": "geru",
-        "category": "General",
-        "image": "icon.png",
-        "imageUrl": "https://sudocarlos.github.io/jellyfin-nostr-auth/nostr-auth/icon.png",
-        "versions": [
-            {
-                "version": "0.1.1.0",
-                "changelog": "Initial release: NIP-98 login endpoint, private allowlist sync over relays, npub-based user provisioning, and dashboard configuration.\n",
-                "targetAbi": "12.0.0.0",
-                "sourceUrl": "https://github.com/sudocarlos/jellyfin-nostr-auth/releases/download/v0.1.1/nostr-auth_0.1.1.0.zip",
-                "checksum": "3848f3c1b7fb7d05fc2a0d0d9862adbc",
-                "timestamp": "2026-09-19T19:51:50Z"
-            },
-            {
-                "version": "0.1.0.0",
-                "changelog": "Initial release: NIP-98 login endpoint, private allowlist sync over relays, npub-based user provisioning, and dashboard configuration.\n",
-                "targetAbi": "12.1.0.0",
-                "sourceUrl": "https://github.com/sudocarlos/jellyfin-nostr-auth/releases/download/v0.1.0/nostr-auth_0.1.0.0.zip",
-                "checksum": "8f569c50c2019eef026d90a37ef51b88",
-                "timestamp": "2026-09-19T19:10:40Z"
-            }
-        ]
-    }
+  {
+    "guid": "a8514093-e868-42c5-8428-22543919e92a",
+    "name": "Nostr Auth",
+    "description": "Replaces username/password login with Nostr authentication for the web client. Viewers log in with a NIP-98 signed event (NIP-07 extension, NIP-46 bunker, or Amber), and access is authorized by the server owner's private Nostr allowlist. The plugin holds no owner-identity key material; the list keypair is dedicated and trivially rotatable.\n",
+    "overview": "Nostr login for Jellyfin",
+    "owner": "geru",
+    "category": "General",
+    "image": "icon.png",
+    "imageUrl": "https://sudocarlos.github.io/jellyfin-nostr-auth/nostr-auth/icon.png",
+    "versions": [
+      {
+        "version": "0.1.1.0",
+        "changelog": "Initial release: NIP-98 login endpoint, private allowlist sync over relays, npub-based user provisioning, and dashboard configuration.\n",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/sudocarlos/jellyfin-nostr-auth/releases/download/v0.1.1/nostr-auth_0.1.1.0.zip",
+        "checksum": "3848f3c1b7fb7d05fc2a0d0d9862adbc",
+        "timestamp": "2026-09-19T19:51:50Z"
+      }
+    ]
+  }
 ]
