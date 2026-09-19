@@ -70,10 +70,13 @@ jobs:
           PLUGIN_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${ZIP_NAME}"
 
           rm -rf gh-pages
-          git clone --branch gh-pages --depth 1 \
-            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" gh-pages \
-            2>/dev/null || (mkdir gh-pages && cd gh-pages && git init -b gh-pages)
-          cd gh-pages
+          if ! git clone --branch gh-pages --depth 1 \
+            "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" gh-pages; then
+            mkdir gh-pages && cd gh-pages && git init -b gh-pages
+            git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          else
+            cd gh-pages
+          fi
 
           test -f manifest.json || echo '[]' > manifest.json
           jprm repo add \
