@@ -1,0 +1,73 @@
+name: Docs
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'website/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: website/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r website/requirements.txt
+
+      - name: Build
+        run: mkdocs build --strict --site-dir site
+        working-directory: website
+
+      # The plugin catalog (manifest.json + plugin icon) lives on the same
+      # gh-pages branch. Deploy the docs site INTO it: copy the built site
+      # over the checkout, keep catalog files, then push. A fresh site build
+      # only ever touches mkdocs-generated paths; catalog files are either
+      # untouched or re-added as-is.
+      - name: Deploy to gh-pages
+        run: |-
+          SITE_DIR="$GITHUB_WORKSPACE/website/site"
+          rm -rf gh-pages
+          if ! git clone --branch gh-pages --depth 1 \
+            "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" gh-pages; then
+            mkdir gh-pages && cd gh-pages && git init -b gh-pages
+            git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          else
+            cd gh-pages
+          fi
+
+          # Copy site content without deleting the catalog's files: rsync
+          # the built site in, --delete cleans stale generated pages, and the
+          # excluded patterns protect the catalog (manifest.json + jprm icon)
+          # and the git checkout itself from deletion.
+          rsync -a --delete \
+            --exclude='manifest.json' --exclude='nostr-auth/' \
+            --exclude='.git/' --exclude='.nojekyll' \
+            "$SITE_DIR"/ ./
+
+          # Material sites ship everything static; keep GitHub Pages from
+          # running Jekyll over them.
+          touch .nojekyll
+
+          git add -A
+          git -c user.name="github-actions[bot]" \
+              -c user.email="github-actions[bot]@users.noreply.github.com" \
+              commit -m "docs: deploy MkDocs site" \
+              --allow-empty
+          git push origin gh-pages

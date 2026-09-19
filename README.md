@@ -1,74 +1,30 @@
-# Jellyfin Nostr Auth
+# jellyfin-nostr-auth
 
-A Jellyfin server plugin (Jellyfin 12.x, .NET 10) that replaces username/password
-login with Nostr authentication for the web client. Viewers prove control of a
-Nostr key by presenting a NIP-98 signed event; access is authorized by the
-server owner's **private Nostr allowlist**. See `docs/design.md` for the full
-design and rationale.
+A Jellyfin server plugin (Jellyfin 12.x) that replaces username/password login
+with Nostr authentication for the web client. Viewers prove control of a Nostr
+key with a NIP-98 signed event; access is authorized by the server owner's
+**private Nostr allowlist**.
 
-## Layout
+[![GitHub Release](https://img.shields.io/github/v/release/sudocarlos/jellyfin-nostr-auth)](https://github.com/sudocarlos/jellyfin-nostr-auth/releases)
+[![CI](https://github.com/sudocarlos/jellyfin-nostr-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/sudocarlos/jellyfin-nostr-auth/actions/workflows/ci.yml)
+[![Build Plugin](https://github.com/sudocarlos/jellyfin-nostr-auth/actions/workflows/build.yaml/badge.svg)](https://github.com/sudocarlos/jellyfin-nostr-auth/actions/workflows/build.yaml)
 
-- `src/NostrAuth.Core` — pure logic, no Jellyfin dependencies:
-  NIP-98 verification, allowlist sync (NIP-51 private lists / NIP-78 app data,
-  NIP-44 decrypt-to-self), staleness policy, list keypair helpers.
-- `src/Jellyfin.Plugin.NostrAuth` — the plugin: anonymous `POST /NostrAuth/Login`
-  (NIP-98 → allowlist → provision → session), admin endpoints for the dashboard,
-  relay sync host, npub→user provisioning.
-- `tests/Jellyfin.Plugin.NostrAuth.Tests` — behavior tests against committed,
-  real signed fixtures.
-- `tests/fixtures/generate.mjs` — regenerates the signed fixtures with
-  nostr-tools (fixed throwaway keys and timestamps, byte-for-byte reproducible).
+📖 **[Full documentation](https://sudocarlos.github.io/jellyfin-nostr-auth/)**
 
-## Development
+## Quick Start
 
-Builds and tests run through the devcontainer image (`mcr.microsoft.com/dotnet/sdk:10.0`),
-which is what CI uses too. There is no .NET SDK on the host.
+Add the plugin repository under Dashboard → Plugins → Repositories:
 
 ```
-podman run --rm -v "$PWD":/src -w /src mcr.microsoft.com/dotnet/sdk:10.0 \
-    dotnet test Jellyfin.Plugin.NostrAuth.sln
+https://sudocarlos.github.io/jellyfin-nostr-auth/manifest.json
 ```
 
-Behavior expectations live in `tests/README.md`; the design contract in
-`docs/design.md`. Every commit must build and pass tests.
+Then, in the plugin's dashboard page: generate a list keypair, publish a
+private NIP-51 list with the authorized npubs from any Nostr client, and point
+the plugin at it. See [Getting Started](https://sudocarlos.github.io/jellyfin-nostr-auth/getting-started/).
 
-## Packaging
+---
 
-`jprm` builds the installable zip from `build.yaml`:
-
-```
-jprm plugin build .
-```
-
-`build.yaml` pins `targetAbi: 12.1.0.0` (matching the packages we compile
-against) and lists the plugin, core, and third-party runtime assemblies
-explicitly — jprm ships only the listed artifacts. Host-provided
-`Jellyfin.*`/`MediaBrowser.*` assemblies are never shipped
-(`ExcludeAssets=runtime` in the plugin csproj). On GitHub, the packaging
-workflow (`.github/workflows/build.yaml`) calls Jellyfin's shared
-meta-plugins build for every push.
-
-## Login flow
-
-1. Owner generates a dedicated list keypair on the plugin's dashboard page.
-2. Owner imports the list nsec into any Nostr client and publishes a private
-   kind-10000 list whose p-tags are the authorized npubs.
-3. Owner configures list npub/nsec/relays in the dashboard; the plugin syncs
-   the list over the configured relays on a poll interval.
-4. Viewers log in on the Nostr login page with a NIP-07 extension, a NIP-46
-   bunker, or Amber; the plugin verifies the signed event, checks the
-   allowlist, provisions the user on first login, and issues a Jellyfin
-   session. The login page lives at `/NostrAuth/LoginPage`; link it from
-   Dashboard → General → Branding (login disclaimer or custom CSS).
-
-## Login page bundle
-
-`src/Jellyfin.Plugin.NostrAuth/Web/nostr.mjs` is a vendored, minified bundle of
-nostr-tools (the same version `tests/fixtures` signs fixtures with, so
-client↔server interop is pinned). Regenerate it after bumping nostr-tools:
-
-```
-cd tests/fixtures && npm install
-npx esbuild snippet-entry.mjs --bundle --format=esm --platform=browser \
-    --target=es2020 --minify --outfile=../../src/Jellyfin.Plugin.NostrAuth/Web/nostr.mjs
-```
+- [Issues & Pull Requests](https://github.com/sudocarlos/jellyfin-nostr-auth) — contributions welcome
+- [Releases](https://github.com/sudocarlos/jellyfin-nostr-auth/releases) — installable plugin zips and release history
+- [Design document](https://github.com/sudocarlos/jellyfin-nostr-auth/blob/master/docs/design.md) — the full spec and rationale

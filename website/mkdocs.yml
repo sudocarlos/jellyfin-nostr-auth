@@ -1,0 +1,60 @@
+site_name: Nostr Auth
+site_description: Nostr NIP-98 login for Jellyfin - viewers sign in with a Nostr key, access is authorized by the server owner's private Nostr allowlist.
+site_url: https://sudocarlos.github.io/jellyfin-nostr-auth/
+copyright: Copyright © Nostr Auth contributors.
+
+# GitHub Pages project site: https://sudocarlos.github.io/jellyfin-nostr-auth/
+# The plugin catalog manifest.json lives on the same gh-pages branch.
+repo_url: https://github.com/sudocarlos/jellyfin-nostr-auth
+repo_name: sudocarlos/jellyfin-nostr-auth
+edit_uri: edit/master/website/docs/
+
+theme:
+  name: material
+  logo: img/icon.png
+  favicon: img/icon.png
+  features:
+    - content.code.copy
+    - navigation.top
+    - navigation.footer
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Signing In: signing-in.md
+  - Design & Security: design.md
+  - Development: development.md
+  - Troubleshooting: troubleshooting.md
+
+markdown_extensions:
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+  - social
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/sudocarlos/jellyfin-nostr-auth
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/sudocarlos/jellyfin-nostr-auth/releases/latest
