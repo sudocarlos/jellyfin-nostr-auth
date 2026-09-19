@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using NNostr.Client;
 using NNostr.Client.Protocols;
 using NostrAuth.Core;
@@ -76,12 +77,33 @@ public sealed class NostrAllowlistSyncService : BackgroundService
         var listNpubHex = Convert.ToHexStringLower(config.ListNpub.FromNIP19Npub().ToBytes());
         var sync = new AllowlistSync(config.ListNsec, listNpubHex);
 
+        // Two filters: kind 10000 by author (replaceable, author+kind addresses
+        // it) and kind 30078 narrowed to the plugin's d tag, so other app-data
+        // events from the same key never reach the merge.
+        var filters = new NostrSubscriptionFilter[]
+        {
+            new()
+            {
+                Authors = [listNpubHex],
+                Kinds = [AllowlistSync.KindPrivateList]
+            },
+            new()
+            {
+                Authors = [listNpubHex],
+                Kinds = [AllowlistSync.KindAppData],
+                ExtensionData = new Dictionary<string, JsonElement>
+                {
+                    ["#d"] = JsonSerializer.SerializeToElement(new[] { AllowlistSync.AppDataDTag })
+                }
+            }
+        };
+
         var candidates = new List<NostrEvent>();
         foreach (var relay in config.Relays)
         {
             try
             {
-                candidates.AddRange(await FetchFromRelayAsync(relay, listNpubHex, stoppingToken));
+                candidates.AddRange(await FetchFromRelayAsync(relay, filters, stoppingToken));
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -122,7 +144,7 @@ public sealed class NostrAllowlistSyncService : BackgroundService
     /// Connects to one relay, requests the list events, and stops after the
     /// relay's EOSE plus a short grace window for events that raced it.
     /// </summary>
-    private static async Task<IReadOnlyList<NostrEvent>> FetchFromRelayAsync(string relay, string listNpubHex, CancellationToken stoppingToken)
+    private static async Task<IReadOnlyList<NostrEvent>> FetchFromRelayAsync(string relay, NostrSubscriptionFilter[] filters, CancellationToken stoppingToken)
     {
         using var client = new NostrClient(new Uri(relay));
         var received = new List<NostrEvent>();
@@ -135,14 +157,7 @@ public sealed class NostrAllowlistSyncService : BackgroundService
         };
 
         await client.Connect(stoppingToken);
-        await client.CreateSubscription(
-            SubscriptionId,
-            [new NostrSubscriptionFilter
-            {
-                Authors = [listNpubHex],
-                Kinds = [AllowlistSync.KindPrivateList, AllowlistSync.KindAppData]
-            }],
-            stoppingToken);
+        await client.CreateSubscription(SubscriptionId, filters, stoppingToken);
 
         var eose = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         client.EoseReceived += (_, subscriptionId) =>

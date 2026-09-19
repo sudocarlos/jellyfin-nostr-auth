@@ -44,7 +44,17 @@ this one server's access list, nothing else.
 
 - **Two event kinds supported for the allowlist.** Primary: kind 10000 (authorable in
   every mainstream client as a "private list"). Advanced: kind 30078 with
-  `d="jellyfin-allowlist"` (NIP-78 app-specific data; cleaner semantics, no client UI).
+  `d="jellyfin-allowlist"` (NIP-78 app-specific data; cleaner semantics, no client UI),
+  where the d tag is enforced at merge time and in the relay subscription — other
+  app-data events signed by the same key are ignored, not read as allowlists.
+
+- **The list is addressed by author + kind, not by event id.** Replaceable events
+  change their id on every republish, so an nevent reference would break on every
+  list edit. kind 10000 addresses one live event per author outright; kind 30078 is
+  narrowed by the d tag (NIP-33 naddr semantics). The disambiguation against the
+  author's *other* lists is the dedicated list keypair: it never publishes anything
+  but the allowlist, so author + kind (+ d tag) is unambiguous without the owner
+  re-sharing an identifier.
   Configured via plugin settings.
 
 - **Decrypt-or-fallback reading of the list.** If `.content` is NIP-44 ciphertext

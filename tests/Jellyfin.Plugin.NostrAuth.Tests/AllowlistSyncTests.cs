@@ -2,7 +2,10 @@ using System.Text.Json;
 using Jellyfin.Plugin.NostrAuth.Tests.TestSupport;
 using NostrAuth.Core;
 using Xunit;
+using NNostr.Client;
+using NNostr.Client.Protocols;
 using NNostrEvent = NNostr.Client.NostrEvent;
+using NostrEventTag = NNostr.Client.NostrEventTag;
 
 namespace Jellyfin.Plugin.NostrAuth.Tests;
 
@@ -60,6 +63,36 @@ public class AllowlistSyncTests
     {
         var sync = Sync();
         var (authorized, _, _) = sync.Merge(new[] { Event("event signed by wrong key is rejected") });
+        Assert.Empty(authorized);
+    }
+
+    [Fact]
+    public async Task accepts_kind_30078_signed_in_csharp_with_the_d_tag()
+    {
+        var sync = Sync();
+        var ev = await SignedEvent(AllowlistSync.KindAppData,
+            Tag("d", AllowlistSync.AppDataDTag),
+            Tag("p", Hex("userAuthorized")));
+        var (authorized, _, _) = sync.Merge([ev]);
+        Assert.Contains(Hex("userAuthorized"), authorized);
+    }
+
+    [Fact]
+    public async Task ignores_kind_30078_event_without_the_d_tag()
+    {
+        var sync = Sync();
+        var ev = await SignedEvent(AllowlistSync.KindAppData, Tag("p", Hex("userAuthorized")));
+        var (authorized, _, createdAt) = sync.Merge([ev]);
+        Assert.Empty(authorized);
+        Assert.Null(createdAt);
+    }
+
+    [Fact]
+    public async Task ignores_kind_30078_event_with_wrong_d_tag()
+    {
+        var sync = Sync();
+        var ev = await SignedEvent(AllowlistSync.KindAppData, Tag("d", "some-other-list"), Tag("p", Hex("userAuthorized")));
+        var (authorized, _, _) = sync.Merge([ev]);
         Assert.Empty(authorized);
     }
 
@@ -151,6 +184,24 @@ public class AllowlistSyncTests
     private static NNostrEvent ToEvent(JsonElement e)
         => JsonSerializer.Deserialize<NNostrEvent>(e.GetRawText(), NostrEventJson.Options)
            ?? throw new InvalidOperationException("fixture event failed to parse");
+
+    // Signed in C# with the fixture list key, mirroring what a relay delivers.
+    private static async Task<NNostrEvent> SignedEvent(int kind, params NostrEventTag[] tags)
+    {
+        var ev = new NNostrEvent
+        {
+            Kind = kind,
+            CreatedAt = DateTimeOffset.FromUnixTimeSeconds(Base),
+            Tags = [.. tags],
+            Content = string.Empty
+        };
+        var nsec = Fixtures.KeyField(Fixtures.Allowlist, "list", "sk");
+        await ev.ComputeIdAndSignAsync(NIP19.FromNIP19Nsec(nsec));
+        return ev;
+    }
+
+    private static NostrEventTag Tag(string identifier, string value)
+        => new() { TagIdentifier = identifier, Data = [value] };
 
     private static string Hex(string keyName) => Fixtures.PubkeyHex(Fixtures.Allowlist, keyName);
 }

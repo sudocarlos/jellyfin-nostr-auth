@@ -98,7 +98,23 @@ public sealed class AllowlistSync : IAllowlistSync
 
     private bool IsAuthoritative(NostrEvent e)
         => string.Equals(e.PublicKey?.ToLowerInvariant(), _listPubkeyHex, StringComparison.Ordinal)
+           && MatchesListShape(e)
            && e.Verify();
+
+    /// <summary>
+    /// The author + kind pair is the address of the list (the list keypair is
+    /// dedicated to it, so no other events share the slot). kind 10000 is a
+    /// standard replaceable event; kind 30078 additionally requires the
+    /// d="jellyfin-allowlist" tag — other app-data events from the same key
+    /// are ignored rather than read as allowlists.
+    /// </summary>
+    private bool MatchesListShape(NostrEvent e)
+        => e.Kind switch
+        {
+            KindPrivateList => true,
+            KindAppData => string.Equals(e.TagValue("d"), AppDataDTag, StringComparison.Ordinal),
+            _ => false
+        };
 
     /// <summary>Decrypts NIP-44 content or falls back to plaintext tags.</summary>
     /// <returns>Authorized pubkeys and whether the source was plaintext.</returns>
