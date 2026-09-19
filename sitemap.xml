@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://sudocarlos.github.io/jellyfin-nostr-auth/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://sudocarlos.github.io/jellyfin-nostr-auth/design/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://sudocarlos.github.io/jellyfin-nostr-auth/development/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://sudocarlos.github.io/jellyfin-nostr-auth/getting-started/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://sudocarlos.github.io/jellyfin-nostr-auth/signing-in/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+    <url>
+         <loc>https://sudocarlos.github.io/jellyfin-nostr-auth/troubleshooting/</loc>
+         <lastmod>2026-09-19</lastmod>
+    </url>
+</urlset>
