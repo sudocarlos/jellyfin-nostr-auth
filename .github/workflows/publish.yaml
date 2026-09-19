@@ -65,7 +65,7 @@ jobs:
         run: |-
           python3 -m pip install -q jprm
           TAG="${{ steps.version.outputs.tag }}"
-          ZIP="${{ steps.jprm.outputs.artifact }}"
+          ZIP="$(realpath "${{ steps.jprm.outputs.artifact }}")"
           ZIP_NAME="$(basename "$ZIP")"
           PLUGIN_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${ZIP_NAME}"
 
