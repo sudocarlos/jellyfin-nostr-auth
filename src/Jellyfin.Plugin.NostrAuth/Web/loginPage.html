@@ -31,6 +31,10 @@
         .hidden { display: none; }
         #status { min-height: 1.2rem; font-size: 0.85rem; margin-top: 0.5rem; }
         #qrcode svg { max-width: 100%; height: auto; background: #fff; }
+        .uri-link {
+            font-size: 0.7rem; word-break: break-all; user-select: all;
+            margin-top: 0.5rem;
+        }
         label { font-size: 0.8rem; display: block; }
     </style>
 </head>
@@ -208,20 +212,28 @@ async function bunkerSignerFromInput(input) {
 
     // Not a bunker:// URL (or resolvable NIP-05): run the nostrconnect flow —
     // show a QR/link the signer scans, then wait up to the design budget.
+    // The secret is fresh random proof-of-connect, never reused.
     const relays = document.querySelector('#ConnectRelays').value
         .split(',').map(r => r.trim()).filter(Boolean);
+    const secret = [...crypto.getRandomValues(new Uint8Array(16))]
+        .map(b => b.toString(16).padStart(2, '0')).join('');
     const uri = NT.nip46.createNostrConnectURI({
         clientPubkey: NT.pure.getPublicKey(clientSecret),
         relays: relays,
-        secret: deviceId()
+        secret: secret
     });
 
     qrArea.classList.remove('hidden');
     const qr = NT.qrcode(0, 'M');
     qr.addData(uri);
     qr.make();
-    qrArea.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0 });
-    setStatus('Scan the QR with your signer, or open the link on that device. Waiting up to 60s…');
+    qrArea.innerHTML = '';
+    qrArea.insertAdjacentHTML('beforeend', qr.createSvgTag({ cellSize: 4, margin: 0 }));
+    const link = document.createElement('div');
+    link.className = 'uri-link';
+    link.textContent = uri;
+    qrArea.appendChild(link);
+    setStatus('Scan the QR with your signer, or open the link on that device. Waiting up to 60s on ' + (relays.join(', ') || 'no relays') + '…');
 
     return NT.nip46.BunkerSigner.fromURI(clientSecret, uri, {}, BUNKER_BUDGET_MS);
 }
@@ -255,7 +267,15 @@ document.querySelector('#NostrConnectButton').addEventListener('click', async ()
         setStatus('Bunker connected. Signing in…');
         await login(signer);
     } catch (err) {
-        setStatus('No nostrconnect response within the 60s budget; try again.');
+        const message = err?.message ?? String(err);
+        if (/closed/i.test(message))
+        {
+            setStatus('The relay connection dropped before the signer responded; check the relays field and try again.');
+        }
+        else
+        {
+            setStatus('No nostrconnect response within the 60s budget; try again.');
+        }
     }
 });
 </script>
