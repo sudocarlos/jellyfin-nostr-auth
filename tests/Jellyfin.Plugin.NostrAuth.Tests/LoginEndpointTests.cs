@@ -11,6 +11,11 @@ using Microsoft.AspNetCore.TestHost;
 using MediaBrowser.Controller.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NNostr.Client;
+using NNostr.Client.Protocols;
+using NostrAuth.Core;
+using NNostrEvent = NNostr.Client.NostrEvent;
+using NostrEventTag = NNostr.Client.NostrEventTag;
 using NostrAuth.Core;
 using Xunit;
 
@@ -61,6 +66,59 @@ public class LoginEndpointTests
         Assert.Equal("not_in_allowlist", json.RootElement.GetProperty("reason").GetString());
     }
 
+    [Fact]
+    public async Task probe_reports_the_canonical_login_url()
+    {
+        await using var app = CreateApp(1760000000);
+        await app.StartAsync();
+        var client = app.GetTestClient();
+
+        var response = await client.GetAsync("https://jellyfin.example.com/NostrAuth/LoginEndpoint");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(LoginUrl, json.RootElement.GetProperty("url").GetString());
+    }
+
+    [Fact]
+    public async Task rejects_u_tag_when_published_server_url_overrides_the_request_view()
+    {
+        await using var app = CreateApp(1760000000, publishedServerUrl: "https://published.example.com");
+        await app.StartAsync();
+        var client = app.GetTestClient();
+
+        // The fixture event is bound to the fixture's login URL; with the
+        // override the server binds to the published URL instead.
+        var c = Nip98Case("valid event within freshness window is accepted");
+        using var request = new HttpRequestMessage(HttpMethod.Post, LoginUrl);
+        request.Headers.TryAddWithoutValidation("Authorization", c.GetProperty("authorization").GetString());
+        var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("url_mismatch", json.RootElement.GetProperty("reason").GetString());
+    }
+
+    [Fact]
+    public async Task accepts_u_tag_bound_to_the_published_server_url()
+    {
+        await using var app = CreateApp(1760000000, publishedServerUrl: "https://published.example.com/");
+        await app.StartAsync();
+        var client = app.GetTestClient();
+
+        var c = Nip98Case("valid event within freshness window is accepted");
+        var ev = await SignedNip98Event(
+            now: c.GetProperty("now").GetInt64(),
+            u: "https://published.example.com/NostrAuth/Login",
+            body: "{\"deviceId\":\"test-device\"}");
+        var header = "Nostr " + Convert.ToBase64String(
+            JsonSerializer.SerializeToUtf8Bytes(ev, NostrEventJson.Options));
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, LoginUrl);
+        request.Headers.TryAddWithoutValidation("Authorization", header);
+        request.Content = new StringContent("{\"deviceId\":\"test-device\"}", Encoding.UTF8, "application/json");
+        var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     // -- helpers --
 
     /// <summary>
@@ -86,7 +144,7 @@ public class LoginEndpointTests
         return new(response.StatusCode, await response.Content.ReadAsStringAsync());
     }
 
-    private static WebApplication CreateApp(long now)
+    private static WebApplication CreateApp(long now, string? publishedServerUrl = null)
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
@@ -106,6 +164,7 @@ public class LoginEndpointTests
         builder.Services.AddSingleton<IUserProvisioner>(stubProvisioner);
         builder.Services.AddSingleton<ISessionMinter>(stubMinter);
         builder.Services.AddSingleton<TimeProvider>(timeProvider);
+        builder.Services.AddSingleton<Func<string?>>(() => publishedServerUrl);
         builder.Services.AddSingleton<INostrStatusProvider>(new NostrStatusProvider(
             () => null,
             () => snapshot,
@@ -159,5 +218,28 @@ public class LoginEndpointTests
                 AccessToken = "test-access-token",
                 ServerId = "test-server-id"
             });
+    }
+
+    // A NIP-98 kind-27235 event signed in C# with the fixture userAuthorized
+    // key — mirrors what the login page produces.
+    private static async Task<NNostrEvent> SignedNip98Event(long now, string u, string body)
+    {
+        var nsec = Fixtures.KeyField(Fixtures.Allowlist, "userAuthorized", "sk");
+        var payloadHash = Convert.ToHexStringLower(
+            System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(body)));
+        var ev = new NNostrEvent
+        {
+            Kind = 27235,
+            CreatedAt = DateTimeOffset.FromUnixTimeSeconds(now),
+            Tags =
+            [
+                new NostrEventTag { TagIdentifier = "u", Data = [u] },
+                new NostrEventTag { TagIdentifier = "method", Data = ["POST"] },
+                new NostrEventTag { TagIdentifier = "payload", Data = [payloadHash] }
+            ],
+            Content = string.Empty
+        };
+        await ev.ComputeIdAndSignAsync(NIP19.FromNIP19Nsec(nsec));
+        return ev;
     }
 }

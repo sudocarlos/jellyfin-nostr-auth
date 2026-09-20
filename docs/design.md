@@ -84,12 +84,16 @@ this one server's access list, nothing else.
 - **Login is a NIP-98 event.** `POST /NostrAuth/Login` accepts
   `Authorization: Nostr <base64(kind-27235 event)>`. Verification requires: valid
   Schnorr signature; `kind == 27235`; `created_at` within 60 seconds; `u` tag exactly
-  equal to the request's absolute URL including query; `method` tag exactly equal to the
-  HTTP method; optional `payload` tag equal to sha256 hex of the request body. Any
-  signer that can sign events — NIP-07 extension, NIP-46 bunker (via `bunker://` token or
-  `nostrconnect://` QR), NIP-55/Amber — can produce this header; the server has a single
-  verification path. Rationale: NIP-98 is the only Nostr spec for server-side HTTP auth
-  and has a C# reference implementation linked from the spec itself.
+  equal to the **canonical login URL** — the configured *Published server URL* when
+  set, else the request's absolute URL; `method` tag exactly equal to the HTTP
+  method; optional `payload` tag equal to sha256 hex of the request body. The login
+  page probes `GET /NostrAuth/LoginEndpoint` (anonymous) before signing, so the event
+  is bound to the URL the server will verify against even when the browser's view
+  differs (reverse proxy, published-address override). Any signer that can sign
+  events — NIP-07 extension, NIP-46 bunker (via `bunker://` token or
+  `nostrconnect://` QR), NIP-55/Amber — can produce this header; the server has a
+  single verification path. Rationale: NIP-98 is the only Nostr spec for server-side
+  HTTP auth and has a C# reference implementation linked from the spec itself.
 
 - **Payload-hash semantics (interop note).** The optional NIP-98 `payload` tag is
   verified as sha256 hex of the raw request body, per the NIP. nostr-tools'

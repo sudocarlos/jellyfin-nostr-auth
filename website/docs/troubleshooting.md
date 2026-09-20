@@ -44,12 +44,22 @@ Branding (login disclaimer or custom CSS).
 
 ## Behind a reverse proxy
 
-The NIP-98 `u` tag binds the event to the absolute request URL, scheme
-included. If the proxy terminates TLS, make sure Jellyfin's **Known proxies**
-is configured so the server reconstructs `https://…` URLs — otherwise
-signers bind to `https` while the server computes `http` and every login
-fails with `url_mismatch`. This is the same forwarded-headers setup Jellyfin
-already requires for other absolute-URL features.
+The NIP-98 `u` tag binds the event to the absolute login URL, scheme included.
+The login page asks the server for its canonical URL (the probe endpoint) before
+signing, so the two views agree whenever the server's own view is consistent.
+If logins still fail with `url_mismatch`, set **Published server URL** in the
+plugin settings to the absolute URL viewers reach the server at (e.g.
+`https://media.example.com/jellyfin`) — both the page and the verification then
+use it byte-for-byte. Alternatively, fix the root cause: configure Jellyfin's
+**Known proxies** so the server reconstructs the viewer-facing scheme and host
+from forwarded headers.
+
+| Plugin setting | Meaning |
+|---|---|
+| Published server URL | The absolute URL viewers use; overrides the request-based URL for the NIP-98 binding |
+
+If the URL binding fails without a proxy in play (accessing by LAN IP but
+signing for a published domain, or vice versa), the same setting fixes it.
 
 ## A provisioned user shows up but cannot log in with a password
 

@@ -27,14 +27,20 @@ public class NostrAuthController : ControllerBase
 
     private readonly INostrLoginService _loginService;
     private readonly INostrStatusProvider _statusProvider;
+    private readonly Func<string?> _publishedServerUrl;
 
     /// <summary>Initializes a new instance of the <see cref="NostrAuthController"/> class.</summary>
     /// <param name="loginService">The login pipeline.</param>
     /// <param name="statusProvider">The dashboard-facing allowlist status.</param>
-    public NostrAuthController(INostrLoginService loginService, INostrStatusProvider statusProvider)
+    /// <param name="publishedServerUrl">The configured Published server URL override, or null.</param>
+    public NostrAuthController(
+        INostrLoginService loginService,
+        INostrStatusProvider statusProvider,
+        Func<string?> publishedServerUrl)
     {
         _loginService = loginService;
         _statusProvider = statusProvider;
+        _publishedServerUrl = publishedServerUrl;
     }
 
     /// <summary>
@@ -61,7 +67,7 @@ public class NostrAuthController : ControllerBase
         var clientMetadata = ParseClientMetadata(body);
         var loginRequest = new LoginRequest(
             Request.Headers.Authorization.ToString(),
-            BuildRequestUrl(),
+            CanonicalLoginUrl(),
             Request.Method,
             body,
             clientMetadata.ClientName ?? "Nostr Client",
@@ -145,11 +151,36 @@ public class NostrAuthController : ControllerBase
     }
 
     /// <summary>
-    /// The absolute request URL, exactly as the client saw it — NIP-98 binds
-    /// the u tag to this string byte-for-byte, scheme and query included.
+    /// The login URL the NIP-98 u tag must bind to, byte-for-byte: the
+    /// configured Published server URL when set, else the request's absolute
+    /// URL exactly as it arrived. Both the login page (via the probe endpoint
+    /// below) and the verification here derive it from this same code path, so
+    /// the two views always agree.
     /// </summary>
-    private string BuildRequestUrl()
-        => $"{Request.Scheme}://{Request.Host}{Request.PathBase}{Request.Path}{Request.QueryString}";
+    private string CanonicalLoginUrl()
+    {
+        var published = _publishedServerUrl();
+        return string.IsNullOrWhiteSpace(published)
+            ? $"{Request.Scheme}://{Request.Host}{Request.PathBase}/NostrAuth/Login"
+            : published.TrimEnd('/') + "/NostrAuth/Login";
+    }
+
+    /// <summary>
+    /// The canonical login URL for the NIP-98 u tag. The login page probes
+    /// this before signing, so the event is bound to the URL the server will
+    /// verify against — even behind proxies where the browser's view and the
+    /// server's request view differ.
+    /// </summary>
+    /// <response code="200">The canonical login URL.</response>
+    /// <returns>The canonical login URL as JSON.</returns>
+    [HttpGet("LoginEndpoint")]
+    [AllowAnonymous]
+    public IActionResult LoginEndpoint()
+        => new ContentResult
+        {
+            Content = JsonSerializer.Serialize(new { url = CanonicalLoginUrl() }, NostrAuthJson.CamelCase),
+            ContentType = "application/json"
+        };
 
     /// <summary>Reads the raw request body once; null when there is none.</summary>
     private async Task<string?> ReadBodyAsync(CancellationToken cancellationToken)

@@ -63,7 +63,16 @@ import * as NT from './nostr.mjs';
 
 const KIND_HTTP_AUTH = 27235;
 const BUNKER_BUDGET_MS = 60000;
-const loginEndpoint = new URL('Login', location.href).href;
+// POST target: same origin as this page (always reachable by the browser).
+const postEndpoint = new URL('Login', location.href).href;
+// The u tag must bind to the URL the SERVER verifies against. Probe it: the
+// server answers with its canonical login URL (Published server URL when
+// configured, else its own request view), which is exactly what the POST
+// verification recomputes.
+const loginEndpoint = fetch(new URL('LoginEndpoint', location.href))
+    .then(response => response.json())
+    .then(info => info.url)
+    .catch(() => new URL('Login', location.href).href);
 const webRoot = new URL('..', location.href).href;
 
 const statusEl = document.querySelector('#status');
@@ -97,12 +106,13 @@ async function buildAuthHeader(signer) {
         clientVersion: '1.0'
     });
     const payloadHash = await sha256Hex(body);
+    const uTag = await loginEndpoint;
 
     const event = {
         kind: KIND_HTTP_AUTH,
         created_at: Math.floor(Date.now() / 1000),
         tags: [
-            ['u', loginEndpoint],
+            ['u', uTag],
             ['method', 'POST'],
             ['payload', payloadHash]
         ],
@@ -128,7 +138,7 @@ const failureMessages = {
 async function login(signer) {
     setBusy();
     const { header, body } = await buildAuthHeader(signer);
-    const response = await fetch(loginEndpoint, {
+    const response = await fetch(postEndpoint, {
         method: 'POST',
         headers: { Authorization: header, 'Content-Type': 'application/json' },
         body: body

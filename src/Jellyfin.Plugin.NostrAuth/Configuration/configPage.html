@@ -53,6 +53,15 @@
                         </label>
                         <div class="fieldDescription">Off (default): the last-known list stays honored during relay outages.</div>
                     </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="PublishedServerUrl">Published server URL</label>
+                        <input id="PublishedServerUrl" name="PublishedServerUrl" type="text" is="emby-input" placeholder="https://media.example.com/jellyfin" />
+                        <div class="fieldDescription">
+                            The absolute URL viewers reach this server at. Set it when the NIP-98 URL
+                            binding fails behind a reverse proxy (server sees a different scheme or
+                            host than viewers use). Leave empty otherwise.
+                        </div>
+                    </div>
                     <div>
                         <button is="emby-button" type="submit" class="raised button-submit block emby-button">
                             <span>Save</span>
@@ -135,6 +144,7 @@
                         document.querySelector('#PollIntervalMinutes').value = config.PollIntervalMinutes || 10;
                         document.querySelector('#MaxListAgeHours').value = config.MaxListAgeHours || 24;
                         document.querySelector('#FailClosed').checked = config.FailClosed || false;
+                        document.querySelector('#PublishedServerUrl').value = config.PublishedServerUrl || '';
                         Dashboard.hideLoadingMsg();
                     });
                     nostrAuthFetchStatus();
@@ -152,6 +162,7 @@
                         config.PollIntervalMinutes = parseInt(document.querySelector('#PollIntervalMinutes').value, 10) || 10;
                         config.MaxListAgeHours = parseInt(document.querySelector('#MaxListAgeHours').value, 10) || 24;
                         config.FailClosed = document.querySelector('#FailClosed').checked;
+                        config.PublishedServerUrl = document.querySelector('#PublishedServerUrl').value.trim();
                         ApiClient.updatePluginConfiguration(NostrAuthConfig.pluginUniqueId, config).then(function (result) {
                             Dashboard.processPluginConfigurationUpdateResult(result);
                         });

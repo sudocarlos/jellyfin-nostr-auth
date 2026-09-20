@@ -40,6 +40,15 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>Gets or sets a value indicating whether logins are refused when the list cannot be fetched.</summary>
     public bool FailClosed { get; set; }
 
+    /// <summary>
+    /// Gets or sets the absolute server URL as viewers reach it (e.g.
+    /// https://media.example.com/jellyfin). Used as the NIP-98 u tag binding
+    /// instead of the request URL — set it when a reverse proxy or
+    /// address-override setup makes the server's request view differ from
+    /// what viewers actually use.
+    /// </summary>
+    public string PublishedServerUrl { get; set; } = string.Empty;
+
     /// <summary>Gets or sets the npub → Jellyfin user mappings resolved by the provisioner.</summary>
     public List<NostrUserLink> Users { get; set; } = [];
 }

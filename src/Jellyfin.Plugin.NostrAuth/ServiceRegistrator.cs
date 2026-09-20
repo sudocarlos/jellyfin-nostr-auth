@@ -41,6 +41,7 @@ public sealed class ServiceRegistrator : IPluginServiceRegistrator
             sp.GetRequiredService<TimeProvider>(),
             sp.GetRequiredService<ILogger<NostrLoginService>>()));
 
+        serviceCollection.AddSingleton<Func<string?>>(() => Plugin.Instance?.Configuration.PublishedServerUrl);
         serviceCollection.AddHostedService<NostrAllowlistSyncService>();
     }
 

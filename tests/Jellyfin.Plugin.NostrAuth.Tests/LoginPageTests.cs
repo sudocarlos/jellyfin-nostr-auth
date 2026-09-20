@@ -63,6 +63,7 @@ public class LoginPageTests
         builder.Services.AddSingleton<IUserProvisioner>(new StubProvisioner());
         builder.Services.AddSingleton<ISessionMinter>(new StubSessionMinter());
         builder.Services.AddSingleton<TimeProvider>(new FixedTimeProvider(DateTimeOffset.UtcNow));
+        builder.Services.AddSingleton<Func<string?>>(() => null);
         builder.Services.AddSingleton<INostrStatusProvider>(new NostrStatusProvider(
             () => null,
             () => null,
