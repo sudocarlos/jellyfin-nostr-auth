@@ -10,6 +10,14 @@
         "imageUrl": "https://sudocarlos.github.io/jellyfin-nostr-auth/nostr-auth/icon.png",
         "versions": [
             {
+                "version": "0.1.3.0",
+                "changelog": "Initial release: NIP-98 login endpoint, private allowlist sync over relays, npub-based user provisioning, and dashboard configuration.\n",
+                "targetAbi": "12.0.0.0",
+                "sourceUrl": "https://github.com/sudocarlos/jellyfin-nostr-auth/releases/download/v0.1.3/nostr-auth_0.1.3.0.zip",
+                "checksum": "de4f73a2639b25ad5bfc1801449c6989",
+                "timestamp": "2026-09-20T14:53:46Z"
+            },
+            {
                 "version": "0.1.2.0",
                 "changelog": "Initial release: NIP-98 login endpoint, private allowlist sync over relays, npub-based user provisioning, and dashboard configuration.\n",
                 "targetAbi": "12.0.0.0",
